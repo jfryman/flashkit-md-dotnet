@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.1 (July 17, 2026)
+
+IMPROVEMENTS:
+
+ * release: the project is now explicitly MIT-licensed — a LICENSE file
+   was added retaining krikzz's copyright, matching the license on the
+   original sources at github.com/krikzz/flashkit. The README credits
+   the original author prominently.
+
 ## 1.0.0 (July 17, 2026)
 
 1.0 milestone: hardware validation is complete on all three platforms
