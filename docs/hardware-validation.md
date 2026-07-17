@@ -9,7 +9,7 @@ Compare against dumps produced by the original Windows client where possible.
 | 1 | `info` on a known cart — name/size/RAM match the original client | ✅ | ✅ | ✅ |
 | 2 | `read-rom` — MD5 identical to a dump from the original client | ✅ | ✅ | ✅ |
 | 3 | `read-ram` on a save cart, then `write-ram` round-trip | ✅ | ✅ | ✅ |
-| 4 | `write-rom` to a FlashKit cart — verify passes, cart boots on console | ✅ | ✅ | ✅* |
+| 4 | `write-rom` to a FlashKit cart — verify passes, cart boots on console | ✅ | ✅ | ✅ |
 
 ## macOS validation runbook (for the agent running on the Mac)
 
@@ -148,9 +148,8 @@ Notes / discrepancies:
   the process exited cleanly — no hang in SerialPort.Close() on Windows
   (the pre-v0.9.2 macOS symptom did not appear). An independent re-dump
   is byte-identical to the source image (`fc /b`: no differences, same
-  MD5 64-73-B1-50-...-51-FE). (*) console boot not re-tested from the
-  Windows-flashed cart; the identical image was already boot-validated
-  in the Linux run.
+  MD5 64-73-B1-50-...-51-FE). Console boot from the Windows-flashed cart
+  tested same day: game boots and runs.
 - Operational note: while the original client had COM3 open, this port
   correctly reported `COM3: Access to the path 'COM3' is denied` instead
   of hanging — expected single-owner serial behavior on Windows.
