@@ -119,6 +119,21 @@ Windows box; divergences get investigated on the dev machine.
 
 Notes / discrepancies:
 
+- 2026-07-17, Windows box (COM3), post-1.0.1 enhancements validated on
+  real hardware (local Release build, commit fd74c45):
+  - CFI flash-presence check, negative path: `write-rom` against the real
+    SF2 mask ROM cart fails fast with "No flash chip detected: CFI query
+    returned 00-00-04-DE-00-00 instead of QRY"; the cart reads normally
+    afterwards.
+  - CFI positive path: the FlashKit flash cart answers the CFI query —
+    `write-rom` of the 2 MB SF2 image proceeded through erase/write/
+    verify normally (exit 0), so the check does not block the primary
+    use case.
+  - `read-rom --trust-header`: on both the real SF2 cart and the flash
+    cart, the header-declared size is 2048K and the dump is
+    MD5-identical to the cross-validated reference
+    (64-73-B1-50-...-51-FE).
+
 - 2026-07-17, Windows 11 Pro 25H2 (build 26200), programmer on COM3
   (`USB Serial Port (COM3)`, FTDI VCP driver auto-installed, serial
   A10MQJP4 — same adapter as the macOS run), release binary v0.9.2
