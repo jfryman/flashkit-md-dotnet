@@ -56,6 +56,56 @@ with the macOS version, arch, and port device name, and commit. If any
 result diverges from Linux, record the exact output — do not "fix"
 anything on the Mac; divergences get investigated on the dev machine.
 
+## Windows validation runbook (for the agent running on the Windows box)
+
+Goal: fill the Windows column above. Items 1-2 are required; 3-4 are a
+bonus. Linux and macOS results below are the reference.
+
+Setup:
+
+1. Download `flashkit-md-v0.9.1-win-x64.zip` (NOT v0.9.0 — its archives
+   have packaging bugs, see the macOS notes) from
+   `https://github.com/jfryman/flashkit-md-mono/releases/tag/v0.9.1`
+   and extract (`Expand-Archive`). If SmartScreen/mark-of-the-web blocks
+   it: `Unblock-File .\flashkit-md.exe`.
+2. Plug in the programmer. It uses an FTDI USB-serial chip; Windows
+   installs the VCP driver automatically (Device Manager shows a
+   `USB Serial Port (COMn)`). Auto-detection probes COM ports;
+   `--port COMn` pins one.
+
+Validation steps (use the REAL game carts, not a FlashKit flash cart —
+see the warning below):
+
+1. `.\flashkit-md.exe info` with a known cart. Expected, matching
+   Linux/macOS:
+   - Action 52: `ACTION 52 (W)`, `ROM size : 4096K`, `RAM size : 0B`
+   - Shining Force 2: `SHINING FORCE 2 (U)`, `ROM size : 2048K`,
+     `RAM size : 8K`
+2. `.\flashkit-md.exe read-rom check.bin` on the same cart. The MD5 the
+   CLI prints must match the reference exactly (cross-check with
+   `Get-FileHash -Algorithm MD5 check.bin` — same hex, no dashes):
+   - Action 52: `C4-C1-91-D4-F8-A9-F0-04-50-26-39-E5-CC-B9-54-80`
+   - Shining Force 2: `64-73-B1-50-53-34-EF-56-20-D1-31-91-C1-82-51-FE`
+3. (bonus) On the SF2 cart: `read-ram backup.srm`, then
+   `write-ram backup.srm` (writes its own backup — non-destructive), then
+   `read-ram again.srm` and compare MD5s; all three must match.
+4. (bonus) `write-rom` a previously dumped image to a FlashKit flash
+   cart and confirm the built-in verify passes plus an independent
+   re-dump matches. Destructive to the flash cart's contents — skip
+   unless the user confirms. Afterwards, check whether the process exits
+   cleanly: on macOS it hangs in SerialPort.Close() after printing OK
+   (see the macOS notes) — record whether Windows does the same.
+
+Warning: both FlashKit flash carts currently hold Shining Force 2 and
+report RAM 0B (SRAM-less carts). Mirror-based size probing can report odd
+ROM sizes on partially programmed flash, so use the real game carts for
+the info/read-rom comparisons.
+
+When done: fill in the Windows column of the table above, add a dated
+note with the Windows version and COM port name, and commit. If any
+result diverges, record the exact output — do not "fix" anything on the
+Windows box; divergences get investigated on the dev machine.
+
 ## Results
 
 Notes / discrepancies:
