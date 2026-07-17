@@ -9,7 +9,7 @@ Compare against dumps produced by the original Windows client where possible.
 | 1 | `info` on a known cart — name/size/RAM match the original client | ✅ | ✅ | ✅ |
 | 2 | `read-rom` — MD5 identical to a dump from the original client | ✅ | ✅ | ✅ |
 | 3 | `read-ram` on a save cart, then `write-ram` round-trip | ✅ | ✅ | ✅ |
-| 4 | `write-rom` to a FlashKit cart — verify passes, cart boots on console | ✅ | ✅* | ☐ |
+| 4 | `write-rom` to a FlashKit cart — verify passes, cart boots on console | ✅ | ✅* | ✅* |
 
 ## macOS validation runbook (for the agent running on the Mac)
 
@@ -141,9 +141,16 @@ Notes / discrepancies:
   this clears the former (*) "not yet cross-checked against an
   original-client dump" caveat on item 2 for ALL platforms — the table
   above now shows plain ✅.
-- Item 4 not run on Windows (no FlashKit flash cart inserted this
-  session); the guarded-close exit behavior after write-rom therefore
-  remains unobserved on Windows.
+- Item 4 (same session, flash cart swapped in): the cart identified as
+  `SHINING FORCE 2 (U)` / 2048K / RAM 0B before the write, consistent
+  with the SRAM-less FlashKit carts. The SF2 dump (2 MB) flashed in 48 s
+  wall time; erase + write + built-in verify passed with exit code 0 and
+  the process exited cleanly — no hang in SerialPort.Close() on Windows
+  (the pre-v0.9.2 macOS symptom did not appear). An independent re-dump
+  is byte-identical to the source image (`fc /b`: no differences, same
+  MD5 64-73-B1-50-...-51-FE). (*) console boot not re-tested from the
+  Windows-flashed cart; the identical image was already boot-validated
+  in the Linux run.
 - Operational note: while the original client had COM3 open, this port
   correctly reported `COM3: Access to the path 'COM3' is denied` instead
   of hanging — expected single-owner serial behavior on Windows.
