@@ -97,6 +97,13 @@ see the warning below):
    cleanly: on macOS this hung in SerialPort.Close() before the v0.9.2
    guarded-close fix (see the macOS notes) — record whether Windows
    exits cleanly too.
+5. (bonus, high value) Cross-check against the ORIGINAL krikzz client —
+   only possible on Windows. Get the original FlashKit MD client from
+   krikzz.com (or build it from `flashkit-md-src.zip` in the repo; the
+   binary itself is not checked in), dump the same cart with it, and
+   compare MD5s against this port's dump. A match clears the (*) caveat
+   on item 2 for ALL platforms, since the Linux and macOS dumps are
+   already byte-identical to each other.
 
 Warning: both FlashKit flash carts currently hold Shining Force 2 and
 report RAM 0B (SRAM-less carts). Mirror-based size probing can report odd
