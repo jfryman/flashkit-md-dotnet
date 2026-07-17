@@ -9,7 +9,7 @@ Compare against dumps produced by the original Windows client where possible.
 | 1 | `info` on a known cart — name/size/RAM match the original client | ✅ | ☐ | ☐ |
 | 2 | `read-rom` — MD5 identical to a dump from the original client | ✅* | ☐ | ☐ |
 | 3 | `read-ram` on a save cart, then `write-ram` round-trip | ✅ | ☐ | ☐ |
-| 4 | `write-rom` to a FlashKit cart — verify passes, cart boots on console | ✅* | ☐ | ☐ |
+| 4 | `write-rom` to a FlashKit cart — verify passes, cart boots on console | ✅ | ☐ | ☐ |
 
 Notes / discrepancies:
 
@@ -38,3 +38,10 @@ Notes / discrepancies:
   Confirmed by matching the stale bytes against the Action 52 dump at
   0x200000. Fixed manually by erasing 0x200000-0x400000; the cart then
   dumps byte-identical to the donor cart and reports 2048K again.
+- Console boot test: SF2 boots and runs from the FlashKit cart. After
+  programming the donor cart's .srm byte layout into flash at 0x200000
+  (odd-byte data / 0xFF even bytes — matches erased flash), the console
+  shows the real saves from the donor cart, validating dump -> flash ->
+  console byte fidelity end to end. Saves are a read-only snapshot on
+  this SRAM-less cart: the game's plain writes to the save window carry
+  no flash command sequence, so nothing persists across power cycles.
