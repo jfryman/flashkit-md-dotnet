@@ -9,7 +9,7 @@ Compare against dumps produced by the original Windows client where possible.
 | 1 | `info` on a known cart — name/size/RAM match the original client | ✅ | ✅ | ☐ |
 | 2 | `read-rom` — MD5 identical to a dump from the original client | ✅* | ✅* | ☐ |
 | 3 | `read-ram` on a save cart, then `write-ram` round-trip | ✅ | ✅ | ☐ |
-| 4 | `write-rom` to a FlashKit cart — verify passes, cart boots on console | ✅ | ☐ | ☐ |
+| 4 | `write-rom` to a FlashKit cart — verify passes, cart boots on console | ✅ | ✅* | ☐ |
 
 ## macOS validation runbook (for the agent running on the Mac)
 
@@ -63,7 +63,9 @@ Notes / discrepancies:
 - 2026-07-17, macOS 26.5.2 (Apple Silicon, arm64), programmer on
   /dev/cu.usbserial-A10MQJP4, release binary v0.9.0 osx-arm64.
 - Release packaging bugs (not port bugs) blocked the binary from running
-  at all; both need fixing in the release workflow:
+  at all; both fixed since (publish.sh embeds native libs via
+  IncludeNativeLibrariesForSelfExtract; release.yml runs on macos-latest
+  and ad-hoc signs the osx binaries) — needs a v0.9.1 tag to take effect:
   1. The binary is unsigned; macOS SIGKILLs unsigned arm64 executables
      (exit 137). Workaround: `codesign -s - ./flashkit-md`. The publish
      should ad-hoc sign osx binaries (or document the workaround).
@@ -86,7 +88,21 @@ Notes / discrepancies:
   re-dumped — all three MD5s identical
   (A4-B8-41-A4-2C-45-EC-BE-FC-F9-98-77-C8-98-4B-C8). Even bytes all 0xFF,
   data on odd bytes, as expected for 8-bit RAM.
-- Item 4: not run on macOS (FlashKit cart not inserted; destructive).
+- Item 4: SF2 dump flashed to a brand-new FlashKit cart (shipped preloaded
+  with `Battle City Online (X)`, 2048K — backed up before overwrite).
+  Erase + write + built-in verify passed; an independent re-dump is
+  byte-identical to the source image (MD5 64-73-B1-50-...-51-FE). Like the
+  other FlashKit cart, this one reports RAM 0B (SRAM-less). (*) console
+  boot not re-tested from the Mac-flashed cart; the identical image was
+  already boot-validated in the Linux run.
+- macOS divergence — write-rom hangs on exit: after printing OK, the
+  process never exits and keeps the port open. Sampled stack shows the
+  main thread stuck in `tcdrain` (ioctl) under `SerialPort.Close()` on the
+  FTDI usbserial driver; read-only commands exit cleanly, so it is
+  write-volume related. Work completes and verifies fine — kill the
+  process and carry on. Needs investigation on the dev machine (candidate
+  fix: DiscardOutBuffer/skip drain on close, or close via the session
+  layer with a timeout).
 - Side note: Blaster Master 2 dumped twice byte-identically
   (MD5 DD-38-02-1F-F9-CB-67-CF-C2-4A-1A-D7-44-7E-4E-3E), but its embedded
   header checksum (0x2137) does not match the computed sum (0xA1F4). No

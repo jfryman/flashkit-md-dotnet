@@ -9,7 +9,10 @@ permissions:
 
 jobs:
   release:
-    runs-on: ubuntu-latest
+    # macOS runner: codesign is needed to ad-hoc sign the osx binaries —
+    # macOS SIGKILLs unsigned arm64 executables on launch. Any host can
+    # cross-publish the other RIDs.
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
@@ -19,6 +22,12 @@ jobs:
         run: ./ci.sh
       - name: Publish all targets
         run: ./publish.sh
+      - name: Sign macOS binaries (ad-hoc)
+        run: |
+          for rid in osx-x64 osx-arm64; do
+            codesign --force -s - "artifacts/$rid/flashkit-md"
+            codesign --verify "artifacts/$rid/flashkit-md"
+          done
       - name: Package
         run: |
           mkdir -p dist
@@ -26,7 +35,7 @@ jobs:
             tar -C "artifacts/$rid" -czf "dist/flashkit-md-$GITHUB_REF_NAME-$rid.tar.gz" flashkit-md
           done
           (cd artifacts/win-x64 && zip -q "$GITHUB_WORKSPACE/dist/flashkit-md-$GITHUB_REF_NAME-win-x64.zip" flashkit-md.exe)
-          (cd dist && sha256sum * > SHA256SUMS)
+          (cd dist && shasum -a 256 * > SHA256SUMS)
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
