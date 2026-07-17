@@ -8,8 +8,8 @@ Cross-platform (Linux / macOS / Windows) client for
 This is a port of the original Windows-only C# WinForms client (v1.0.0.0,
 preserved in `flashkit-md-src.zip`) to .NET 8. The serial protocol and
 cartridge logic are ported verbatim from the original; the front-ends are
-a CLI and an Avalonia GUI reproducing the original window. See `PLAN.md`
-for the porting approach and current status.
+a CLI and an Avalonia GUI reproducing the original window. See
+`docs/porting-plan.md` for how the port was staged.
 
 > **All credit for the hardware and the original client goes to
 > [krikzz](https://krikzz.com/)** — this project is only a port and would
@@ -50,7 +50,10 @@ and the erase/size overrides are CLI-only.
 
 Grab a binary from the GitHub Releases page (published automatically for
 each `v*` tag: `.tar.gz` for Linux/macOS, `.zip` for Windows, with a
-`SHA256SUMS` file), or build from source (needs the .NET 8 SDK):
+`SHA256SUMS` file). Each archive holds both the CLI (`flashkit-md`) and
+the GUI (`flashkit-md-gui`); macOS releases additionally ship the GUI as
+a `FlashKit MD.app` bundle (`FlashKit-MD.app-*-osx-{x64,arm64}.zip`).
+Or build from source (needs the .NET 8 SDK):
 
 ```
 dotnet publish src/flashkit-md -c Release -r linux-x64 --self-contained \
@@ -86,7 +89,11 @@ source (no quarantine), or clear the flag:
 
 ```
 xattr -d com.apple.quarantine ./flashkit-md
+xattr -dr com.apple.quarantine "FlashKit MD.app"
 ```
+
+(The binaries are ad-hoc signed, not notarized, so the first launch of
+the `.app` may also need right-click → Open.)
 
 ### macOS: write-rom may hang on exit (fixed in v0.9.2)
 

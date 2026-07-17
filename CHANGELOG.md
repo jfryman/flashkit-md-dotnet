@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.3.0 (July 17, 2026)
+
+FEATURES:
+
+ * release: macOS releases now ship the GUI as a signed `FlashKit MD.app`
+   bundle (`FlashKit-MD.app-vX.Y.Z-osx-{x64,arm64}.zip`) with the
+   original client's icon, assembled by `packaging/macos/make-app.sh`.
+
+BUG FIXES:
+
+ * release: the macOS GUI binary in the v1.2.0 tarballs crashed on
+   launch anywhere but the build tree — the macOS single-file bundler
+   silently leaves the pre-signed Skia/HarfBuzz/AvaloniaNative dylibs
+   next to the binary, and the tarballs dropped them (same class of bug
+   as v0.9.0's serial lib). The GUI now embeds all content on macOS,
+   and `publish.sh` fails if any native library is left beside a binary
+   so this cannot ship silently again. Linux and Windows GUI binaries
+   were unaffected.
+
 ## 1.2.0 (July 17, 2026)
 
 FEATURES:

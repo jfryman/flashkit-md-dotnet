@@ -1,8 +1,9 @@
 # CLAUDE.md
 
 Cross-platform .NET 8 port of krikzz's FlashKit MD programmer client
-(Sega Mega Drive / Genesis cart dumper/flasher). See PLAN.md for the staged
-porting goal and docs/hardware-validation.md for real-hardware results.
+(Sega Mega Drive / Genesis cart dumper/flasher). See docs/porting-plan.md
+for the (completed, archived) staged porting plan and
+docs/hardware-validation.md for real-hardware results.
 
 ## Build and test
 

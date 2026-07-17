@@ -21,20 +21,25 @@ jobs:
       - name: Test
         run: ./ci.sh
       - name: Publish all targets
-        run: ./publish.sh
-      - name: Sign macOS binaries (ad-hoc)
+        run: APP_VERSION="${GITHUB_REF_NAME#v}" ./publish.sh
+      - name: Sign macOS binaries and app bundles (ad-hoc)
         run: |
           for rid in osx-x64 osx-arm64; do
             for bin in flashkit-md flashkit-md-gui; do
               codesign --force -s - "artifacts/$rid/$bin"
               codesign --verify "artifacts/$rid/$bin"
             done
+            codesign --force -s - "artifacts/$rid/FlashKit MD.app"
+            codesign --verify "artifacts/$rid/FlashKit MD.app"
           done
       - name: Package
         run: |
           mkdir -p dist
           for rid in linux-x64 linux-arm64 osx-x64 osx-arm64; do
             tar -C "artifacts/$rid" -czf "dist/flashkit-md-$GITHUB_REF_NAME-$rid.tar.gz" flashkit-md flashkit-md-gui
+          done
+          for rid in osx-x64 osx-arm64; do
+            ditto -c -k --keepParent "artifacts/$rid/FlashKit MD.app" "dist/FlashKit-MD.app-$GITHUB_REF_NAME-$rid.zip"
           done
           (cd artifacts/win-x64 && zip -q "$GITHUB_WORKSPACE/dist/flashkit-md-$GITHUB_REF_NAME-win-x64.zip" flashkit-md.exe flashkit-md-gui.exe)
           (cd dist && shasum -a 256 * > SHA256SUMS)

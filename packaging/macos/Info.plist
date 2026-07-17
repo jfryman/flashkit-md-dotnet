@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleName</key>
+	<string>FlashKit MD</string>
+	<key>CFBundleDisplayName</key>
+	<string>FlashKit MD</string>
+	<key>CFBundleIdentifier</key>
+	<string>io.fryman.flashkit-md</string>
+	<key>CFBundleExecutable</key>
+	<string>flashkit-md-gui</string>
+	<key>CFBundleIconFile</key>
+	<string>flashkit</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>APP_VERSION</string>
+	<key>CFBundleVersion</key>
+	<string>APP_VERSION</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>11.0</string>
+	<key>NSHighResolutionCapable</key>
+	<true/>
+	<key>NSHumanReadableCopyright</key>
+	<string>MIT license — original client and hardware by krikzz (krikzz.com)</string>
+</dict>
+</plist>

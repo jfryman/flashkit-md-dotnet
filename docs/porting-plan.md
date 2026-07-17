@@ -1,5 +1,9 @@
 # Goal: Cross-platform port of FlashKit MD (Linux + macOS + Windows)
 
+> **Historical document.** This plan is complete and archived for
+> reference — it records how the port was staged and why. Current
+> status lives in CHANGELOG.md and the README.
+
 > **Status (2026-07-17):** All stages complete. Stages 0-5 released as
 > v1.0.0: hardware validation passed on Linux, macOS, and Windows,
 > including a byte-identical cross-check against the original krikzz
@@ -147,7 +151,8 @@ reproducing the original window: same five buttons, console messages,
 and progress bar, with operations moved off the UI thread. Headless
 xunit tests (`tests/FlashKit.Gui.Tests`) drive the window against
 `FakeFlashKitDevice`. Published and released alongside the CLI for all
-five RIDs. Still open: a proper macOS .app bundle and notarization.
+five RIDs, plus a signed `FlashKit MD.app` bundle on macOS. Still open:
+notarization (needs an Apple developer account).
 
 ## Out of scope
 
