@@ -6,9 +6,9 @@ Compare against dumps produced by the original Windows client where possible.
 
 | # | Test | Linux | macOS | Windows |
 |---|------|-------|-------|---------|
-| 1 | `info` on a known cart — name/size/RAM match the original client | ✅ | ✅ | ☐ |
-| 2 | `read-rom` — MD5 identical to a dump from the original client | ✅* | ✅* | ☐ |
-| 3 | `read-ram` on a save cart, then `write-ram` round-trip | ✅ | ✅ | ☐ |
+| 1 | `info` on a known cart — name/size/RAM match the original client | ✅ | ✅ | ✅ |
+| 2 | `read-rom` — MD5 identical to a dump from the original client | ✅ | ✅ | ✅ |
+| 3 | `read-ram` on a save cart, then `write-ram` round-trip | ✅ | ✅ | ✅ |
 | 4 | `write-rom` to a FlashKit cart — verify passes, cart boots on console | ✅ | ✅* | ☐ |
 
 ## macOS validation runbook (for the agent running on the Mac)
@@ -118,6 +118,35 @@ Windows box; divergences get investigated on the dev machine.
 ## Results
 
 Notes / discrepancies:
+
+- 2026-07-17, Windows 11 Pro 25H2 (build 26200), programmer on COM3
+  (`USB Serial Port (COM3)`, FTDI VCP driver auto-installed, serial
+  A10MQJP4 — same adapter as the macOS run), release binary v0.9.2
+  win-x64.
+- Item 1: Shining Force 2 reported `SHINING FORCE 2 (U)` / 2048K / 8K,
+  matching Linux and macOS exactly.
+- Item 2: SF2 dumped 2 MB,
+  MD5 64-73-B1-50-53-34-EF-56-20-D1-31-91-C1-82-51-FE — identical to the
+  Linux/macOS reference; `Get-FileHash` agrees.
+- Item 3: SF2 8K SRAM backed up, written back (built-in verify passed),
+  re-dumped — all three MD5s identical
+  (A4-B8-41-A4-2C-45-EC-BE-FC-F9-98-77-C8-98-4B-C8), matching the macOS
+  run's SRAM dump. 16384-byte file, even bytes all 0xFF as expected for
+  8-bit RAM.
+- Item 5 — original-client cross-check: the same cart was dumped minutes
+  earlier with the original krikzz client (flashkit-md v1.0.0.0) on the
+  same box. Both the ROM dump and the SRAM dump are byte-identical
+  (`fc /b`: no differences) to this port's output. Since the Linux and
+  macOS dumps already matched this port's Windows dump byte-for-byte,
+  this clears the former (*) "not yet cross-checked against an
+  original-client dump" caveat on item 2 for ALL platforms — the table
+  above now shows plain ✅.
+- Item 4 not run on Windows (no FlashKit flash cart inserted this
+  session); the guarded-close exit behavior after write-rom therefore
+  remains unobserved on Windows.
+- Operational note: while the original client had COM3 open, this port
+  correctly reported `COM3: Access to the path 'COM3' is denied` instead
+  of hanging — expected single-owner serial behavior on Windows.
 
 - 2026-07-17, macOS 26.5.2 (Apple Silicon, arm64), programmer on
   /dev/cu.usbserial-A10MQJP4, release binary v0.9.0 osx-arm64.
