@@ -1,13 +1,15 @@
 # flashkit-md
 
-Cross-platform (Linux / macOS / Windows) command-line client for
+Cross-platform (Linux / macOS / Windows) client for
 [krikzz's FlashKit MD programmer](https://krikzz.com/our-products/accessories/flashkitmd.html)
-— dump and flash Sega Mega Drive / Genesis cartridges.
+— dump and flash Sega Mega Drive / Genesis cartridges. Ships as a CLI
+(`flashkit-md`) and a desktop GUI (`flashkit-md-gui`).
 
 This is a port of the original Windows-only C# WinForms client (v1.0.0.0,
 preserved in `flashkit-md-src.zip`) to .NET 8. The serial protocol and
-cartridge logic are ported verbatim from the original; the GUI is replaced
-by a CLI. See `PLAN.md` for the porting approach and current status.
+cartridge logic are ported verbatim from the original; the front-ends are
+a CLI and an Avalonia GUI reproducing the original window. See `PLAN.md`
+for the porting approach and current status.
 
 > **All credit for the hardware and the original client goes to
 > [krikzz](https://krikzz.com/)** — this project is only a port and would
@@ -38,6 +40,11 @@ on macOS, `COM*` on Windows). Use `--port` to pin a specific port.
 
 Dumps print an MD5 you can compare against the original Windows client's
 output; `write-rom` and `write-ram` verify by reading back.
+
+`flashkit-md-gui` is the same set of operations behind the original
+client's five-button window (Cart info, Read/Write ROM, Read/Write RAM,
+console log, progress bar). It has no command-line options; `bake-save`
+and the erase/size overrides are CLI-only.
 
 ## Install
 
@@ -115,8 +122,8 @@ overwrite in-game.
 ```
 
 The project is a library-first design: all device workflows live in
-`FlashKit.Core` and front-ends only render them, so a TUI or GUI builds on
-the same tested code as the CLI.
+`FlashKit.Core` and front-ends only render them — the CLI and the
+Avalonia GUI build on the same tested code.
 
 Layout:
 
@@ -131,11 +138,15 @@ Layout:
     mismatches, and do no console or file I/O.
 - `src/flashkit-md/` — the CLI: argument parsing, file I/O, and rendering
   over `FlashKitSession`.
+- `src/FlashKit.Gui/` — the Avalonia GUI: the original client's window
+  over `FlashKitSession`, operations on a worker thread.
 - `tests/FlashKit.Core.Tests/` — wire-format tests locked to the original
   protocol, plus behavior/e2e tests against `FakeFlashKitDevice`, an
   in-memory emulation of the programmer firmware. CI never needs hardware;
   real-hardware validation is the manual checklist in
   `docs/hardware-validation.md`.
+- `tests/FlashKit.Gui.Tests/` — headless GUI tests driving the window
+  against the same fake device.
 
 ## Credits
 

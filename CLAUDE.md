@@ -19,8 +19,8 @@ Both scripts handle that; for ad-hoc commands use
 
 CHANGELOG.md follows the mitchellh/HashiCorp style: one `## X.Y.Z
 (Month D, YYYY)` section per release with FEATURES / IMPROVEMENTS /
-BUG FIXES headings and `component:`-prefixed entries (cli, core, serial,
-release). Every user-visible change adds an entry under `## Unreleased`
+BUG FIXES headings and `component:`-prefixed entries (cli, gui, core,
+serial, release). Every user-visible change adds an entry under `## Unreleased`
 in the same commit as the change. To cut a release: rename Unreleased to
 the version + date, commit, then tag `vX.Y.Z` — the release workflow
 extracts that section for the GitHub release notes and fails the release
@@ -41,9 +41,11 @@ if the section is missing.
     ReadRam/WriteRam/BakeSave. Synchronous, progress via
     `Action<OperationProgress>` (each phase starts with Done=0),
     `VerifyException` on read-back mismatch, no console/file I/O.
-- `src/flashkit-md/` — CLI: arg parsing, file I/O, rendering. Reference
-  implementation for future TUI/GUI front-ends, which should also build on
-  FlashKitSession.
+- `src/flashkit-md/` — CLI: arg parsing, file I/O, rendering.
+- `src/FlashKit.Gui/` — Avalonia GUI mirroring the original WinForms
+  window, also on FlashKitSession; operations run on a worker thread.
+  Headless tests in `tests/FlashKit.Gui.Tests` drive the window against
+  the fake device via the connector/file-picker seams in MainWindow.
 - `flashkit-md-src.zip` — pristine original Windows source (WinForms,
   .NET 4) as distributed by krikzz. Never modify; unzip elsewhere when a
   diff against the original is needed.
