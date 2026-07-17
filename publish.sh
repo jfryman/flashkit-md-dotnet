@@ -61,4 +61,6 @@ for rid in "${RIDS[@]}"; do
 done
 
 echo "Done:"
-ls -ld artifacts/*/flashkit-md* artifacts/*/*.app 2>/dev/null
+# || true: single-RID runs (CI publish matrix) have no .app, the glob
+# stays literal, and ls's nonzero exit would fail the whole script.
+ls -ld artifacts/*/flashkit-md* artifacts/*/*.app 2>/dev/null || true

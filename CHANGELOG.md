@@ -1,6 +1,15 @@
 # Changelog
 
-## 1.4.0 (July 17, 2026)
+## 1.4.1 (July 17, 2026)
+
+BUG FIXES:
+
+ * release: `publish.sh` exited nonzero after a successful single-RID
+   publish (as in the CI publish matrix) because the final `ls` listing
+   included an `.app` glob that only matches when the macOS targets were
+   built in the same run. This failed every CI publish job since v1.3.0;
+   release builds were unaffected because they publish all targets
+   together.
 
 FEATURES:
 
