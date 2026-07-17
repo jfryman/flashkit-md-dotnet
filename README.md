@@ -87,12 +87,23 @@ overwrite in-game.
 ./ci.sh    # restore + build (warnings as errors) + all tests, a few seconds
 ```
 
+The project is a library-first design: all device workflows live in
+`FlashKit.Core` and front-ends only render them, so a TUI or GUI builds on
+the same tested code as the CLI.
+
 Layout:
 
-- `src/FlashKit.Core/` — serial protocol (`Device`), cart logic (`Cart`),
-  port discovery. Ported verbatim from the original client behind an
-  `ISerialPort` seam.
-- `src/flashkit-md/` — the CLI.
+- `src/FlashKit.Core/` — the library.
+  - `Device`/`Cart`: serial protocol and cart logic, ported verbatim from
+    the original client behind an `ISerialPort` seam; `DeviceConnector`
+    for cross-platform port discovery.
+  - `FlashKitSession`: the front-end API — `GetInfo`, `ReadRom`,
+    `WriteRom`, `ReadRam`, `WriteRam`, `BakeSave`. Operations are
+    synchronous, report progress via an `Action<OperationProgress>`
+    callback (phase + done/total), throw `VerifyException` on read-back
+    mismatches, and do no console or file I/O.
+- `src/flashkit-md/` — the CLI: argument parsing, file I/O, and rendering
+  over `FlashKitSession`.
 - `tests/FlashKit.Core.Tests/` — wire-format tests locked to the original
   protocol, plus behavior/e2e tests against `FakeFlashKitDevice`, an
   in-memory emulation of the programmer firmware. CI never needs hardware;

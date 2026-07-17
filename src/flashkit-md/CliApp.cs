@@ -4,9 +4,9 @@ using FlashKit.Core;
 namespace flashkit_md;
 
 /// <summary>
-/// Command-line front-end replacing the original WinForms window. Each
-/// command ports the corresponding Form1 button handler; file dialogs
-/// become file arguments and the console textbox becomes stdout.
+/// Command-line front-end. All device workflows live in
+/// <see cref="FlashKitSession"/> (shared with future TUI/GUI front-ends);
+/// this class only parses arguments, does file I/O, and renders output.
 /// </summary>
 public sealed class CliApp
 {
@@ -74,25 +74,28 @@ public sealed class CliApp
             return 2;
         }
 
+        if (command is "write-rom" or "write-ram" or "bake-save" && file == null)
+        {
+            err.WriteLine(command + " requires a file");
+            return 2;
+        }
+
         try
         {
             switch (command)
             {
                 case "info":
-                    return WithDevice(portName, delay: 1, (device, cart) => Info(cart));
+                    return WithSession(portName, Info);
                 case "read-rom":
-                    return WithDevice(portName, delay: 1, (device, cart) => ReadRom(device, cart, file));
+                    return WithSession(portName, session => ReadRom(session, file));
                 case "write-rom":
-                    if (file == null) { err.WriteLine("write-rom requires a file"); return 2; }
-                    return WithDevice(portName, delay: 0, (device, cart) => WriteRom(device, file, fullErase));
+                    return WithSession(portName, session => WriteRom(session, file!, fullErase));
                 case "read-ram":
-                    return WithDevice(portName, delay: 1, (device, cart) => ReadRam(device, cart, file));
+                    return WithSession(portName, session => ReadRam(session, file));
                 case "write-ram":
-                    if (file == null) { err.WriteLine("write-ram requires a file"); return 2; }
-                    return WithDevice(portName, delay: 1, (device, cart) => WriteRam(device, cart, file));
+                    return WithSession(portName, session => WriteRam(session, file!));
                 case "bake-save":
-                    if (file == null) { err.WriteLine("bake-save requires a file"); return 2; }
-                    return WithDevice(portName, delay: 0, (device, cart) => BakeSave(device, file));
+                    return WithSession(portName, session => BakeSave(session, file!));
                 default:
                     err.WriteLine(Usage);
                     return 2;
@@ -105,28 +108,20 @@ public sealed class CliApp
         }
     }
 
-    int WithDevice(string? portName, int delay, Action<Device, Cart> body)
+    int WithSession(string? portName, Action<FlashKitSession> body)
     {
-        var (device, port) = connector.connect(portName);
-        try
-        {
-            con.WriteLine("Connected to: " + device.getPortName());
-            device.setDelay(delay);
-            body(device, new Cart(device));
-            return 0;
-        }
-        finally
-        {
-            try { port.Close(); }
-            catch (Exception) { }
-        }
+        using var session = FlashKitSession.Connect(connector, portName);
+        con.WriteLine("Connected to: " + session.PortName);
+        body(session);
+        return 0;
     }
 
-    void Info(Cart cart)
+    void Info(FlashKitSession session)
     {
-        con.WriteLine("ROM name : " + cart.getRomName());
-        con.WriteLine("ROM size : " + cart.getRomSize() / 1024 + "K");
-        PrintRamSize(cart.getRamSize());
+        var info = session.GetInfo();
+        con.WriteLine("ROM name : " + info.RomName);
+        con.WriteLine("ROM size : " + info.RomBytes / 1024 + "K");
+        PrintRamSize(info.RamBytes);
     }
 
     void PrintRamSize(int ram_size)
@@ -141,181 +136,84 @@ public sealed class CliApp
         }
     }
 
-    void ReadRom(Device device, Cart cart, string? file)
+    void ReadRom(FlashKitSession session, string? file)
     {
-        string path = file ?? cart.getRomName() + ".bin";
-        int rom_size = cart.getRomSize();
+        string path = file ?? session.GetRomName() + ".bin";
         con.WriteLine("Read ROM to " + path);
-        con.WriteLine("ROM size : " + rom_size / 1024 + "K");
-
-        var rom = new byte[rom_size];
-        device.writeWord(0xA13000, 0x0000);
-        device.setAddr(0);
-        for (int i = 0; i < rom_size; i += 32768)
-        {
-            device.read(rom, i, Math.Min(32768, rom_size - i));
-            Progress(i + 32768, rom_size);
-        }
-
-        // File.WriteAllBytes truncates; the original's File.OpenWrite left
-        // stale bytes when overwriting a larger existing dump.
+        byte[] rom = session.ReadRom(RenderProgress());
+        con.WriteLine("ROM size : " + rom.Length / 1024 + "K");
         File.WriteAllBytes(path, rom);
         PrintMD5(rom);
         con.WriteLine("OK");
     }
 
-    void ReadRam(Device device, Cart cart, string? file)
+    void WriteRom(FlashKitSession session, string file, bool fullErase)
     {
-        string path = file ?? cart.getRomName() + ".srm";
-        int ram_size = cart.getRamSize();
-        if (ram_size == 0) throw new Exception("RAM is not detected");
+        byte[] image = File.ReadAllBytes(file);
+        session.WriteRom(image, fullErase, RenderProgress(phase => phase switch
+        {
+            OperationPhase.Erase => fullErase ? "Flash erase (full chip)..." : "Flash erase...",
+            OperationPhase.Write => "Flash write...",
+            _ => "Flash verify...",
+        }));
+        con.WriteLine("OK");
+    }
+
+    void ReadRam(FlashKitSession session, string? file)
+    {
+        string path = file ?? session.GetRomName() + ".srm";
+        byte[] ram = session.ReadRam();
         con.WriteLine("Read RAM to " + path);
-        PrintRamSize(ram_size);
-
-        device.writeWord(0xA13000, 0xffff);
-        device.setAddr(0x200000);
-        var ram = new byte[ram_size * 2];
-        device.read(ram, 0, ram.Length);
-
+        PrintRamSize(ram.Length / 2);
         File.WriteAllBytes(path, ram);
         PrintMD5(ram);
         con.WriteLine("OK");
     }
 
-    void WriteRam(Device device, Cart cart, string file)
+    void WriteRam(FlashKitSession session, string file)
     {
         con.WriteLine("Write RAM...");
         byte[] ram = File.ReadAllBytes(file);
-
-        int ram_size = cart.getRamSize();
-        if (ram_size == 0) throw new Exception("RAM is not detected");
-
-        ram_size *= 2;
-        int copy_len = ram.Length;
-        if (ram_size < copy_len) copy_len = ram_size;
-        if (copy_len % 2 != 0) copy_len--;
-        device.writeWord(0xA13000, 0xffff);
-        device.setAddr(0x200000);
-        device.write(ram, 0, copy_len);
-
-        con.WriteLine("Verify...");
-        var ram2 = new byte[copy_len];
-        device.setAddr(0x200000);
-        device.read(ram2, 0, copy_len);
-        for (int i = 0; i < copy_len; i++)
-        {
-            if (i % 2 == 0) continue; // save RAM is 8-bit, on odd bytes
-            if (ram[i] != ram2[i]) throw new Exception("Verify error at " + i);
-        }
-
-        con.WriteLine("" + copy_len / 2 + " words sent");
+        int words = session.WriteRam(ram, RenderProgress(phase =>
+            phase == OperationPhase.Verify ? "Verify..." : null, percentages: false));
+        con.WriteLine("" + words + " words sent");
         PrintMD5(ram);
         con.WriteLine("OK");
     }
 
-    void WriteRom(Device device, string file, bool fullErase)
+    void BakeSave(FlashKitSession session, string file)
     {
-        try
-        {
-            byte[] src = File.ReadAllBytes(file);
-            int rom_size = src.Length;
-            if (rom_size % 65536 != 0) rom_size = rom_size / 65536 * 65536 + 65536;
-            if (rom_size > 0x400000) rom_size = 0x400000;
-            var rom = new byte[rom_size];
-            Array.Copy(src, rom, Math.Min(src.Length, rom_size));
-
-            int erase_len = fullErase ? 0x400000 : rom_size;
-            con.WriteLine(fullErase ? "Flash erase (full chip)..." : "Flash erase...");
-            device.flashResetByPass();
-            for (int i = 0; i < erase_len; i += 65536)
-            {
-                device.flashErase(i);
-                Progress(i + 65536, erase_len);
-            }
-
-            con.WriteLine("Flash write...");
-            device.flashUnlockBypass();
-            device.setAddr(0);
-            for (int i = 0; i < rom_size; i += 4096)
-            {
-                device.flashWrite(rom, i, 4096);
-                Progress(i + 4096, rom_size);
-            }
-            device.flashResetByPass();
-
-            con.WriteLine("Flash verify...");
-            var rom2 = new byte[rom_size];
-            device.setAddr(0);
-            for (int i = 0; i < rom_size; i += 4096)
-            {
-                device.read(rom2, i, 4096);
-                Progress(i + 4096, rom_size);
-            }
-            for (int i = 0; i < rom_size; i++)
-            {
-                if (rom[i] != rom2[i]) throw new Exception("Verify error at " + i);
-            }
-
-            con.WriteLine("OK");
-        }
-        catch (Exception)
-        {
-            try { device.flashResetByPass(); }
-            catch (Exception) { }
-            throw;
-        }
+        byte[] srm = File.ReadAllBytes(file);
+        con.WriteLine("Bake save into flash at 0x200000...");
+        session.BakeSave(srm, RenderProgress(phase =>
+            phase == OperationPhase.Verify ? "Verify..." : null));
+        PrintMD5(srm);
+        con.WriteLine("Note: baked saves are a read-only snapshot; in-game saving will not persist.");
+        con.WriteLine("OK");
     }
 
-    void BakeSave(Device device, string file)
+    /// <summary>
+    /// Builds a progress callback that prints a label on each phase
+    /// transition (when <paramref name="phaseLabel"/> returns one) and a
+    /// percentage stream on stderr.
+    /// </summary>
+    Action<OperationProgress> RenderProgress(
+        Func<OperationPhase, string?>? phaseLabel = null, bool percentages = true)
     {
-        const int SaveWindow = 0x200000;
-        try
+        OperationPhase? last = null;
+        return p =>
         {
-            byte[] srm = File.ReadAllBytes(file);
-            if (srm.Length == 0) throw new Exception("save image is empty");
-            if (srm.Length % 2 != 0) throw new Exception("save image must have an even length (word stream)");
-            if (srm.Length > 0x100000) throw new Exception("save image too large (max 1 MB)");
-
-            con.WriteLine("Bake save into flash at 0x200000...");
-            int span = (srm.Length + 65535) / 65536 * 65536;
-            device.flashResetByPass();
-            for (int i = 0; i < span; i += 65536) device.flashErase(SaveWindow + i);
-
-            device.flashUnlockBypass();
-            device.setAddr(SaveWindow);
-            for (int i = 0; i < srm.Length; i += 4096)
+            if (p.Phase != last)
             {
-                device.flashWrite(srm, i, Math.Min(4096, srm.Length - i));
-                Progress(i + 4096, srm.Length);
+                last = p.Phase;
+                if (phaseLabel?.Invoke(p.Phase) is string label) con.WriteLine(label);
             }
-            device.flashResetByPass();
-
-            con.WriteLine("Verify...");
-            var readback = new byte[srm.Length];
-            device.setAddr(SaveWindow);
-            device.read(readback, 0, readback.Length);
-            for (int i = 0; i < srm.Length; i++)
+            if (percentages && p.Total > 0 && p.Done > 0)
             {
-                if (srm[i] != readback[i]) throw new Exception("Verify error at " + i);
+                err.Write($"\r{Math.Min(p.Done, p.Total) * 100 / p.Total}%");
+                if (p.Done >= p.Total) err.Write("\r");
             }
-
-            PrintMD5(srm);
-            con.WriteLine("Note: baked saves are a read-only snapshot; in-game saving will not persist.");
-            con.WriteLine("OK");
-        }
-        catch (Exception)
-        {
-            try { device.flashResetByPass(); }
-            catch (Exception) { }
-            throw;
-        }
-    }
-
-    void Progress(long done, long total)
-    {
-        if (done > total) done = total;
-        err.Write($"\r{done * 100 / total}%");
-        if (done >= total) err.Write("\r");
+        };
     }
 
     void PrintMD5(byte[] buff)
