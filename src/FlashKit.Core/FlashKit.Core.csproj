@@ -10,4 +10,8 @@
     <PackageReference Include="System.IO.Ports" Version="10.0.10" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="FlashKit.Core.Tests" />
+  </ItemGroup>
+
 </Project>

@@ -61,10 +61,11 @@ write-ram → write-rom) and record results in docs/hardware-validation.md.
 An `Unknown (X) / 0K` info result usually means the cart is unseated, not
 a code bug — re-check after reseating before debugging.
 
-Known macOS bug: after write-rom completes (prints OK), the process hangs
-in SerialPort.Close() — tcdrain never returns on the FTDI driver — and
-keeps the port open, so the next command gets "access denied". Kill the
-leftover process; the flash contents are fine. Unfixed as of 2026-07-17.
+macOS FTDI gotcha (fixed 2026-07-17): SerialPort.Close() drains via
+tcdrain, which wedged forever after write-rom's multi-MB writes, hanging
+the process with the port held. SystemSerialPort now discards the output
+queue and abandons a stuck close (guarded-close, covered by
+SystemSerialPortTests) — keep that behavior if the adapter is touched.
 
 ## Domain gotchas
 

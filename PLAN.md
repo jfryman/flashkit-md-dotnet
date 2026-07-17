@@ -2,12 +2,11 @@
 
 > **Status (2026-07-17):** Stages 0-4 complete. Stage 5: Linux and macOS
 > columns fully validated on real hardware; Windows is next — see the
-> Windows runbook in docs/hardware-validation.md. v0.9.1 tagged: fixes
-> the v0.9.0 packaging bugs found during macOS validation (native libs
-> now embedded in the single file; osx binaries ad-hoc signed). One open
-> divergence: write-rom hangs in SerialPort.Close() on macOS after
-> completing successfully (tcdrain never returns) — needs a fix on the
-> dev machine. Extras beyond the original plan: write-rom --full-erase,
+> Windows runbook in docs/hardware-validation.md. v0.9.1 fixed the
+> v0.9.0 packaging bugs found during macOS validation (native libs
+> embedded in the single file; osx binaries ad-hoc signed). v0.9.2 fixed
+> the macOS write-rom exit hang (guarded serial close; hardware
+> re-validated). Extras beyond the original plan: write-rom --full-erase,
 > bake-save, and a library-first refactor (FlashKitSession) enabling
 > future TUI/GUI front-ends (Stage 6).
 

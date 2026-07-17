@@ -70,13 +70,14 @@ source (no quarantine), or clear the flag:
 xattr -d com.apple.quarantine ./flashkit-md
 ```
 
-### macOS: write-rom may hang on exit
+### macOS: write-rom may hang on exit (fixed in v0.9.2)
 
-Known issue: after `write-rom` finishes (it prints the final `OK`), the
-process can hang instead of exiting, keeping the serial port locked. The
-flash write and verify have completed by then — it is safe to Ctrl-C. If a
-later command reports the port as denied, check for a leftover
-`flashkit-md` process and kill it.
+In v0.9.1 and earlier, `write-rom` could hang after printing the final
+`OK` (the FTDI driver's output drain wedges inside the serial close),
+keeping the port locked. The flash write and verify have completed by
+then — it is safe to Ctrl-C; if a later command reports the port as
+denied, kill the leftover `flashkit-md` process. Upgrade to v0.9.2+ for
+the fix.
 
 ## Notes on flash carts
 

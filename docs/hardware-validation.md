@@ -63,9 +63,10 @@ bonus. Linux and macOS results below are the reference.
 
 Setup:
 
-1. Download `flashkit-md-v0.9.1-win-x64.zip` (NOT v0.9.0 — its archives
-   have packaging bugs, see the macOS notes) from
-   `https://github.com/jfryman/flashkit-md-mono/releases/tag/v0.9.1`
+1. Download `flashkit-md-v0.9.2-win-x64.zip` (NOT v0.9.0, whose archives
+   have packaging bugs, nor v0.9.1, which lacks the serial-close fix —
+   see the macOS notes) from
+   `https://github.com/jfryman/flashkit-md-mono/releases/tag/v0.9.2`
    and extract (`Expand-Archive`). If SmartScreen/mark-of-the-web blocks
    it: `Unblock-File .\flashkit-md.exe`.
 2. Plug in the programmer. It uses an FTDI USB-serial chip; Windows
@@ -93,8 +94,9 @@ see the warning below):
    cart and confirm the built-in verify passes plus an independent
    re-dump matches. Destructive to the flash cart's contents — skip
    unless the user confirms. Afterwards, check whether the process exits
-   cleanly: on macOS it hangs in SerialPort.Close() after printing OK
-   (see the macOS notes) — record whether Windows does the same.
+   cleanly: on macOS this hung in SerialPort.Close() before the v0.9.2
+   guarded-close fix (see the macOS notes) — record whether Windows
+   exits cleanly too.
 
 Warning: both FlashKit flash carts currently hold Shining Force 2 and
 report RAM 0B (SRAM-less carts). Mirror-based size probing can report odd
@@ -150,9 +152,12 @@ Notes / discrepancies:
   main thread stuck in `tcdrain` (ioctl) under `SerialPort.Close()` on the
   FTDI usbserial driver; read-only commands exit cleanly, so it is
   write-volume related. Work completes and verifies fine — kill the
-  process and carry on. Needs investigation on the dev machine (candidate
-  fix: DiscardOutBuffer/skip drain on close, or close via the session
-  layer with a timeout).
+  process and carry on. FIXED same day: SystemSerialPort now discards the
+  output queue before close and abandons a close that still wedges
+  (guarded-close). Re-validated on hardware: write-rom (2 MB, 42 s total)
+  exits cleanly, port released, independent re-dump byte-identical over
+  the image extent. write-rom --full-erase also validated on macOS in the
+  same session.
 - Side note: Blaster Master 2 dumped twice byte-identically
   (MD5 DD-38-02-1F-F9-CB-67-CF-C2-4A-1A-D7-44-7E-4E-3E), but its embedded
   header checksum (0x2137) does not match the computed sum (0xA1F4). No
