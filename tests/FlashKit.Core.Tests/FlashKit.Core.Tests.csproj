@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\FlashKit.Core\FlashKit.Core.csproj" />
+    <ProjectReference Include="..\..\src\flashkit-md\flashkit-md.csproj" />
   </ItemGroup>
 
 </Project>
