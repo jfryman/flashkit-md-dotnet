@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+FEATURES:
+
+ * gui: new cross-platform desktop front-end (`src/FlashKit.Gui`,
+   Avalonia) mirroring the original WinForms client: Read/Write ROM,
+   Read/Write RAM, and Cart info buttons, a console log, and a progress
+   bar. Built on `FlashKitSession`; operations run off the UI thread so
+   the window stays responsive during multi-MB transfers.
+ * release: `publish.sh` and the release workflow now build, sign, and
+   package the GUI (`flashkit-md-gui`) alongside the CLI in every
+   platform archive.
+
 ## 1.1.0 (July 17, 2026)
 
 FEATURES:

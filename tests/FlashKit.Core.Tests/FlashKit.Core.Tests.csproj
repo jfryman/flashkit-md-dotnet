@@ -21,6 +21,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- FlashKit.Gui.Tests reuses FakeFlashKitDevice and TestRoms. -->
+    <InternalsVisibleTo Include="FlashKit.Gui.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\FlashKit.Core\FlashKit.Core.csproj" />
     <ProjectReference Include="..\..\src\flashkit-md\flashkit-md.csproj" />
   </ItemGroup>

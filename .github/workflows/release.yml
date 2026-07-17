@@ -25,16 +25,18 @@ jobs:
       - name: Sign macOS binaries (ad-hoc)
         run: |
           for rid in osx-x64 osx-arm64; do
-            codesign --force -s - "artifacts/$rid/flashkit-md"
-            codesign --verify "artifacts/$rid/flashkit-md"
+            for bin in flashkit-md flashkit-md-gui; do
+              codesign --force -s - "artifacts/$rid/$bin"
+              codesign --verify "artifacts/$rid/$bin"
+            done
           done
       - name: Package
         run: |
           mkdir -p dist
           for rid in linux-x64 linux-arm64 osx-x64 osx-arm64; do
-            tar -C "artifacts/$rid" -czf "dist/flashkit-md-$GITHUB_REF_NAME-$rid.tar.gz" flashkit-md
+            tar -C "artifacts/$rid" -czf "dist/flashkit-md-$GITHUB_REF_NAME-$rid.tar.gz" flashkit-md flashkit-md-gui
           done
-          (cd artifacts/win-x64 && zip -q "$GITHUB_WORKSPACE/dist/flashkit-md-$GITHUB_REF_NAME-win-x64.zip" flashkit-md.exe)
+          (cd artifacts/win-x64 && zip -q "$GITHUB_WORKSPACE/dist/flashkit-md-$GITHUB_REF_NAME-win-x64.zip" flashkit-md.exe flashkit-md-gui.exe)
           (cd dist && shasum -a 256 * > SHA256SUMS)
       - name: Extract release notes from CHANGELOG.md
         run: |

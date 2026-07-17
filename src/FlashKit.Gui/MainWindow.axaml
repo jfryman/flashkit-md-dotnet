@@ -1,0 +1,56 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="FlashKit.Gui.MainWindow"
+        Title="Flashkit-md"
+        Icon="/Assets/flashkit.ico"
+        Width="740" Height="490"
+        CanResize="False">
+
+  <!-- Same shape as the original WinForms Form1: ROM/RAM button groups and
+       Cart info on the left, read-only console on the right, progress bar
+       across the bottom. -->
+  <Grid Margin="12" ColumnDefinitions="220,12,*" RowDefinitions="Auto,12,Auto,12,*,12,Auto">
+
+    <Border Grid.Row="0" Grid.Column="0"
+            BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+            BorderThickness="1" CornerRadius="4" Padding="8">
+      <StackPanel Spacing="8">
+        <TextBlock Text="ROM" FontWeight="SemiBold" />
+        <Button x:Name="BtnReadRom" Content="Read ROM" Height="48"
+                HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                Click="OnReadRom" />
+        <Button x:Name="BtnWriteRom" Content="Write ROM" Height="48"
+                HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                Click="OnWriteRom" />
+      </StackPanel>
+    </Border>
+
+    <Border Grid.Row="2" Grid.Column="0"
+            BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+            BorderThickness="1" CornerRadius="4" Padding="8">
+      <StackPanel Spacing="8">
+        <TextBlock Text="RAM" FontWeight="SemiBold" />
+        <Button x:Name="BtnReadRam" Content="Read RAM" Height="48"
+                HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                Click="OnReadRam" />
+        <Button x:Name="BtnWriteRam" Content="Write RAM" Height="48"
+                HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                Click="OnWriteRam" />
+      </StackPanel>
+    </Border>
+
+    <Button x:Name="BtnCartInfo" Grid.Row="4" Grid.Column="0"
+            Content="Cart info" VerticalAlignment="Bottom" Height="64"
+            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+            Click="OnCartInfo" />
+
+    <TextBox x:Name="ConsoleBox" Grid.Row="0" Grid.RowSpan="5" Grid.Column="2"
+             IsReadOnly="True" AcceptsReturn="True" TextWrapping="NoWrap"
+             FontFamily="Consolas,Menlo,DejaVu Sans Mono,monospace" FontSize="13"
+             ScrollViewer.VerticalScrollBarVisibility="Auto"
+             ScrollViewer.HorizontalScrollBarVisibility="Auto" />
+
+    <ProgressBar x:Name="Progress" Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="3"
+                 Height="28" Minimum="0" Maximum="1" Value="0" />
+  </Grid>
+</Window>
