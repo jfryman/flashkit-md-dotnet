@@ -1,4 +1,4 @@
-# flashkit-md
+# flashkit-md-dotnet
 
 Cross-platform (Linux / macOS / Windows) client for
 [krikzz's FlashKit MD programmer](https://krikzz.com/our-products/accessories/flashkitmd.html)
