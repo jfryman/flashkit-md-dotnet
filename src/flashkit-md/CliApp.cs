@@ -22,6 +22,11 @@ public sealed class CliApp
                              (only for carts with a full-size 4 MB chip)
           read-ram [file]    dump save RAM (default file: <ROM name>.srm)
           write-ram <file>   write save RAM from file
+          bake-save <file>   program a save image into flash at the save
+                             window (0x200000) of an SRAM-less flash cart:
+                             the game sees the saves read-only, so they
+                             survive every power cycle but cannot be
+                             overwritten in-game (needs a 4 MB chip)
         """;
 
     readonly DeviceConnector connector;
@@ -85,6 +90,9 @@ public sealed class CliApp
                 case "write-ram":
                     if (file == null) { err.WriteLine("write-ram requires a file"); return 2; }
                     return WithDevice(portName, delay: 1, (device, cart) => WriteRam(device, cart, file));
+                case "bake-save":
+                    if (file == null) { err.WriteLine("bake-save requires a file"); return 2; }
+                    return WithDevice(portName, delay: 0, (device, cart) => BakeSave(device, file));
                 default:
                     err.WriteLine(Usage);
                     return 2;
@@ -248,6 +256,51 @@ public sealed class CliApp
                 if (rom[i] != rom2[i]) throw new Exception("Verify error at " + i);
             }
 
+            con.WriteLine("OK");
+        }
+        catch (Exception)
+        {
+            try { device.flashResetByPass(); }
+            catch (Exception) { }
+            throw;
+        }
+    }
+
+    void BakeSave(Device device, string file)
+    {
+        const int SaveWindow = 0x200000;
+        try
+        {
+            byte[] srm = File.ReadAllBytes(file);
+            if (srm.Length == 0) throw new Exception("save image is empty");
+            if (srm.Length % 2 != 0) throw new Exception("save image must have an even length (word stream)");
+            if (srm.Length > 0x100000) throw new Exception("save image too large (max 1 MB)");
+
+            con.WriteLine("Bake save into flash at 0x200000...");
+            int span = (srm.Length + 65535) / 65536 * 65536;
+            device.flashResetByPass();
+            for (int i = 0; i < span; i += 65536) device.flashErase(SaveWindow + i);
+
+            device.flashUnlockBypass();
+            device.setAddr(SaveWindow);
+            for (int i = 0; i < srm.Length; i += 4096)
+            {
+                device.flashWrite(srm, i, Math.Min(4096, srm.Length - i));
+                Progress(i + 4096, srm.Length);
+            }
+            device.flashResetByPass();
+
+            con.WriteLine("Verify...");
+            var readback = new byte[srm.Length];
+            device.setAddr(SaveWindow);
+            device.read(readback, 0, readback.Length);
+            for (int i = 0; i < srm.Length; i++)
+            {
+                if (srm[i] != readback[i]) throw new Exception("Verify error at " + i);
+            }
+
+            PrintMD5(srm);
+            con.WriteLine("Note: baked saves are a read-only snapshot; in-game saving will not persist.");
             con.WriteLine("OK");
         }
         catch (Exception)

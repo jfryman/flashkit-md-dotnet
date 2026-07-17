@@ -69,12 +69,17 @@ xattr -d com.apple.quarantine ./flashkit-md
 original client). If the cart previously held a larger ROM, the leftover
 data above the new image stays on the chip — and a game with save support
 may read it through the save-RAM window at `0x200000` and show "corrupted"
-ghost save slots on console. If that happens, flash a full-chip-size image
-or erase the remainder of the chip.
+ghost save slots on console. Use `write-rom --full-erase` to wipe the whole
+chip first (only on carts with a full-size 4 MB chip — on smaller chips the
+upper address space mirrors the ROM and a full erase would corrupt it).
 
-Also note the FlashKit cart plays saves-capable games but cannot persist
-saves unless its board actually has SRAM populated; `info` reporting
-`RAM size : 0B` on the flash cart tells you saving won't work.
+The FlashKit cart plays saves-capable games but cannot persist saves unless
+its board actually has SRAM populated; `info` reporting `RAM size : 0B` on
+the flash cart tells you saving won't work. As a workaround, `bake-save`
+programs a save image (e.g. dumped from a real cart with `read-ram`) into
+the flash at the save window: the game then sees those saves — loadable,
+surviving every power cycle — but as a read-only snapshot it cannot
+overwrite in-game.
 
 ## Development
 

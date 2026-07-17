@@ -213,6 +213,50 @@ public class CliTests : IDisposable
     }
 
     [Fact]
+    public void bake_save_programs_save_window_and_verifies()
+    {
+        var fake = new FakeFlashKitDevice(new byte[0x400000]) { FlashWritable = true };
+        FlashFilled(fake, 0x400000, 0xAB); // stale data everywhere, incl. save window
+        var srm = new byte[16384];
+        for (int i = 0; i < srm.Length; i += 2) { srm[i] = 0xFF; srm[i + 1] = (byte)(i * 7 + 3); }
+        string file = TempFile("save.srm");
+        File.WriteAllBytes(file, srm);
+
+        int exit = App(fake).Run(new[] { "bake-save", file });
+
+        Assert.Equal(0, exit);
+        Assert.Contains("read-only snapshot", stdout.ToString());
+        Assert.Contains("OK", stdout.ToString());
+        Assert.Equal(srm, fake.Rom.Skip(0x200000).Take(srm.Length).ToArray());
+        // rest of the erased 64K block is clean, the ROM area untouched
+        Assert.Equal(0xFF, fake.Rom[0x200000 + srm.Length]);
+        Assert.Equal(0xAB, fake.Rom[0x1FFFFF]);
+        Assert.Equal(0xAB, fake.Rom[0x210000]);
+    }
+
+    [Fact]
+    public void bake_save_requires_a_file()
+    {
+        int exit = AppWithoutDevice().Run(new[] { "bake-save" });
+
+        Assert.Equal(2, exit);
+        Assert.Contains("bake-save requires a file", stderr.ToString());
+    }
+
+    [Fact]
+    public void bake_save_rejects_odd_sized_images()
+    {
+        var fake = new FakeFlashKitDevice(new byte[0x400000]) { FlashWritable = true };
+        string file = TempFile("bad.srm");
+        File.WriteAllBytes(file, new byte[1023]);
+
+        int exit = App(fake).Run(new[] { "bake-save", file });
+
+        Assert.Equal(1, exit);
+        Assert.Contains("even length", stderr.ToString());
+    }
+
+    [Fact]
     public void ram_commands_fail_cleanly_without_save_ram()
     {
         var fake = new FakeFlashKitDevice(TestRoms.MakeRom(0x80000));
