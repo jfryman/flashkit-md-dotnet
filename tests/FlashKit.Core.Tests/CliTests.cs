@@ -120,6 +120,65 @@ public class CliTests : IDisposable
     }
 
     [Fact]
+    public void write_rom_without_full_erase_leaves_stale_data_above_image()
+    {
+        // The ghost-save scenario: a smaller game flashed over a larger one
+        // leaves the old data at 0x200000+, where saves-capable games look
+        // for SRAM. This is the original client's behavior, kept as default.
+        var fake = new FakeFlashKitDevice(new byte[0x400000]) { FlashWritable = true };
+        FlashFilled(fake, 0x400000, 0xAB);
+        string file = TempFile("game.bin");
+        File.WriteAllBytes(file, new byte[0x20000]);
+
+        int exit = App(fake).Run(new[] { "write-rom", file });
+
+        Assert.Equal(0, exit);
+        Assert.Equal(0xAB, fake.Rom[0x200000]);
+    }
+
+    [Fact]
+    public void write_rom_full_erase_wipes_the_whole_chip()
+    {
+        var fake = new FakeFlashKitDevice(new byte[0x400000]) { FlashWritable = true };
+        FlashFilled(fake, 0x400000, 0xAB);
+        var data = new byte[0x20000];
+        for (int i = 0; i < data.Length; i++) data[i] = (byte)(i * 31 + 7);
+        string file = TempFile("game.bin");
+        File.WriteAllBytes(file, data);
+
+        int exit = App(fake).Run(new[] { "write-rom", "--full-erase", file });
+
+        Assert.Equal(0, exit);
+        Assert.Contains("Flash erase (full chip)...", stdout.ToString());
+        Assert.Equal(data, fake.Rom.Take(data.Length).ToArray());
+        Assert.Equal(0xFF, fake.Rom[0x200000]);
+        Assert.Equal(0xFF, fake.Rom[0x3FFFFF]);
+    }
+
+    [Fact]
+    public void full_erase_is_rejected_outside_write_rom()
+    {
+        int exit = AppWithoutDevice().Run(new[] { "read-rom", "--full-erase", TempFile("x.bin") });
+
+        Assert.Equal(2, exit);
+        Assert.Contains("--full-erase only applies to write-rom", stderr.ToString());
+    }
+
+    /// <summary>Programs a fill pattern into fake flash via the real command path.</summary>
+    static void FlashFilled(FakeFlashKitDevice fake, int len, byte fill)
+    {
+        var device = new Device(fake);
+        var pattern = new byte[len];
+        Array.Fill(pattern, fill);
+        device.flashResetByPass();
+        for (int i = 0; i < len; i += 65536) device.flashErase(i);
+        device.flashUnlockBypass();
+        device.setAddr(0);
+        for (int i = 0; i < len; i += 4096) device.flashWrite(pattern, i, 4096);
+        device.flashResetByPass();
+    }
+
+    [Fact]
     public void read_ram_dumps_save_ram()
     {
         var fake = new FakeFlashKitDevice(TestRoms.MakeRom(0x100000), sramBytes: 8192);

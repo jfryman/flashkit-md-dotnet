@@ -17,6 +17,9 @@ public sealed class CliApp
           info               print cart ROM name/size and save-RAM size
           read-rom [file]    dump cart ROM (default file: <ROM name>.bin)
           write-rom <file>   erase flash cart and write ROM image
+              --full-erase   erase the entire 4 MB chip first, so no stale
+                             data above the image shows up as ghost saves
+                             (only for carts with a full-size 4 MB chip)
           read-ram [file]    dump save RAM (default file: <ROM name>.srm)
           write-ram <file>   write save RAM from file
         """;
@@ -37,6 +40,7 @@ public sealed class CliApp
         string? portName = null;
         string? command = null;
         string? file = null;
+        bool fullErase = false;
 
         for (int i = 0; i < args.Length; i++)
         {
@@ -49,6 +53,7 @@ public sealed class CliApp
                 }
                 portName = args[++i];
             }
+            else if (args[i] == "--full-erase") fullErase = true;
             else if (command == null) command = args[i];
             else if (file == null) file = args[i];
             else
@@ -56,6 +61,12 @@ public sealed class CliApp
                 err.WriteLine("unexpected argument: " + args[i]);
                 return 2;
             }
+        }
+
+        if (fullErase && command != "write-rom")
+        {
+            err.WriteLine("--full-erase only applies to write-rom");
+            return 2;
         }
 
         try
@@ -68,7 +79,7 @@ public sealed class CliApp
                     return WithDevice(portName, delay: 1, (device, cart) => ReadRom(device, cart, file));
                 case "write-rom":
                     if (file == null) { err.WriteLine("write-rom requires a file"); return 2; }
-                    return WithDevice(portName, delay: 0, (device, cart) => WriteRom(device, file));
+                    return WithDevice(portName, delay: 0, (device, cart) => WriteRom(device, file, fullErase));
                 case "read-ram":
                     return WithDevice(portName, delay: 1, (device, cart) => ReadRam(device, cart, file));
                 case "write-ram":
@@ -194,7 +205,7 @@ public sealed class CliApp
         con.WriteLine("OK");
     }
 
-    void WriteRom(Device device, string file)
+    void WriteRom(Device device, string file, bool fullErase)
     {
         try
         {
@@ -205,12 +216,13 @@ public sealed class CliApp
             var rom = new byte[rom_size];
             Array.Copy(src, rom, Math.Min(src.Length, rom_size));
 
-            con.WriteLine("Flash erase...");
+            int erase_len = fullErase ? 0x400000 : rom_size;
+            con.WriteLine(fullErase ? "Flash erase (full chip)..." : "Flash erase...");
             device.flashResetByPass();
-            for (int i = 0; i < rom_size; i += 65536)
+            for (int i = 0; i < erase_len; i += 65536)
             {
                 device.flashErase(i);
-                Progress(i + 65536, rom_size);
+                Progress(i + 65536, erase_len);
             }
 
             con.WriteLine("Flash write...");
