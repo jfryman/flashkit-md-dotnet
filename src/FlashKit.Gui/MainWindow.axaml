@@ -4,8 +4,8 @@
         x:Class="FlashKit.Gui.MainWindow"
         Title="Flashkit-md"
         Icon="/Assets/flashkit.ico"
-        Width="820" Height="680"
-        MinWidth="700" MinHeight="610">
+        Width="820" Height="628"
+        MinWidth="700" MinHeight="628">
 
   <Window.Styles>
     <Style Selector="TextBlock.label">
@@ -51,11 +51,11 @@
       </StackPanel>
     </Border>
 
-    <!-- ScrollViewer so a too-small window scrolls the panels instead of
-         painting them over the status bar. -->
-    <ScrollViewer Grid.Row="0" Grid.Column="0" VerticalScrollBarVisibility="Auto">
-    <StackPanel Spacing="12">
-      <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+    <!-- The last row stretches so the Auto-write panel's bottom edge always
+         lines up with the transaction panel's, whatever the window size. -->
+    <Grid Grid.Row="0" Grid.Column="0" RowDefinitions="Auto,12,Auto,12,Auto,12,*">
+      <Border Grid.Row="0"
+              BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
               BorderThickness="1" CornerRadius="4" Padding="8">
         <StackPanel Spacing="8">
           <TextBlock Text="ROM" FontWeight="SemiBold" />
@@ -68,7 +68,8 @@
         </StackPanel>
       </Border>
 
-      <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+      <Border Grid.Row="2"
+              BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
               BorderThickness="1" CornerRadius="4" Padding="8">
         <StackPanel Spacing="8">
           <TextBlock Text="RAM" FontWeight="SemiBold" />
@@ -81,7 +82,8 @@
         </StackPanel>
       </Border>
 
-      <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+      <Border Grid.Row="4"
+              BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
               BorderThickness="1" CornerRadius="4" Padding="8">
         <StackPanel Spacing="6">
           <TextBlock Text="Auto-dump" FontWeight="SemiBold" />
@@ -95,7 +97,8 @@
         </StackPanel>
       </Border>
 
-      <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+      <Border Grid.Row="6"
+              BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
               BorderThickness="1" CornerRadius="4" Padding="8">
         <StackPanel Spacing="6">
           <TextBlock Text="Auto-write" FontWeight="SemiBold" />
@@ -107,8 +110,7 @@
                      Opacity="0.7" TextTrimming="CharacterEllipsis" />
         </StackPanel>
       </Border>
-    </StackPanel>
-    </ScrollViewer>
+    </Grid>
 
     <Grid Grid.Row="0" Grid.Column="2" RowDefinitions="Auto,12,*">
 
