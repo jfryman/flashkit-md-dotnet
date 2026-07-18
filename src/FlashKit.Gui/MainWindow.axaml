@@ -51,15 +51,18 @@
       </StackPanel>
     </Border>
 
-    <StackPanel Grid.Row="0" Grid.Column="0" Spacing="12">
+    <!-- ScrollViewer so a too-small window scrolls the panels instead of
+         painting them over the status bar. -->
+    <ScrollViewer Grid.Row="0" Grid.Column="0" VerticalScrollBarVisibility="Auto">
+    <StackPanel Spacing="12">
       <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
               BorderThickness="1" CornerRadius="4" Padding="8">
         <StackPanel Spacing="8">
           <TextBlock Text="ROM" FontWeight="SemiBold" />
-          <Button x:Name="BtnReadRom" Content="Read ROM" Height="48"
+          <Button x:Name="BtnReadRom" Content="Read ROM" Height="30"
                   HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
                   Click="OnReadRom" />
-          <Button x:Name="BtnWriteRom" Content="Write ROM" Height="48"
+          <Button x:Name="BtnWriteRom" Content="Write ROM" Height="30"
                   HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
                   Click="OnWriteRom" />
         </StackPanel>
@@ -69,10 +72,10 @@
               BorderThickness="1" CornerRadius="4" Padding="8">
         <StackPanel Spacing="8">
           <TextBlock Text="RAM" FontWeight="SemiBold" />
-          <Button x:Name="BtnReadRam" Content="Read RAM" Height="48"
+          <Button x:Name="BtnReadRam" Content="Read RAM" Height="30"
                   HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
                   Click="OnReadRam" />
-          <Button x:Name="BtnWriteRam" Content="Write RAM" Height="48"
+          <Button x:Name="BtnWriteRam" Content="Write RAM" Height="30"
                   HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
                   Click="OnWriteRam" />
         </StackPanel>
@@ -105,6 +108,7 @@
         </StackPanel>
       </Border>
     </StackPanel>
+    </ScrollViewer>
 
     <Grid Grid.Row="0" Grid.Column="2" RowDefinitions="Auto,12,*">
 
