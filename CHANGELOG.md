@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.5.2 (July 18, 2026)
 
 FEATURES:
 
