@@ -133,16 +133,31 @@ jobs:
 
   flatpak:
     # Flatpak tooling is Linux-only, so this runs after the release
-    # exists and appends the bundle (and its checksum) to it.
+    # exists and appends the bundles (and their checksums) to it.
+    # max-parallel 1: both arches append to SHA256SUMS, and concurrent
+    # download-append-clobber would lose one arch's line.
     needs: release
-    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 1
+      matrix:
+        include:
+          - arch: x86_64
+            rid: linux-x64
+            runner: ubuntu-latest
+          - arch: aarch64
+            rid: linux-arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
-      - name: Publish linux-x64
-        run: VERSION="${GITHUB_REF_NAME#v}" RIDS=linux-x64 ./publish.sh
+      - name: Publish ${{ matrix.rid }} and stage for the manifest
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}" RIDS=${{ matrix.rid }} ./publish.sh
+          mkdir -p artifacts/flatpak-stage
+          cp "artifacts/${{ matrix.rid }}/flashkit-md" "artifacts/${{ matrix.rid }}/flashkit-md-gui" artifacts/flatpak-stage/
       - name: Install flatpak-builder and runtimes
         run: |
           sudo apt-get update
@@ -153,11 +168,11 @@ jobs:
         run: |
           flatpak-builder --user --force-clean --repo=flatpak-repo flatpak-build \
             packaging/flatpak/io.github.jfryman.FlashKitMD.yml
-          flatpak build-bundle flatpak-repo "flashkit-md-$GITHUB_REF_NAME-x86_64.flatpak" io.github.jfryman.FlashKitMD
+          flatpak build-bundle flatpak-repo "flashkit-md-$GITHUB_REF_NAME-${{ matrix.arch }}.flatpak" io.github.jfryman.FlashKitMD
       - name: Upload bundle to release and update SHA256SUMS
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release download "$GITHUB_REF_NAME" -p SHA256SUMS -O SHA256SUMS
-          shasum -a 256 "flashkit-md-$GITHUB_REF_NAME-x86_64.flatpak" >> SHA256SUMS
-          gh release upload "$GITHUB_REF_NAME" "flashkit-md-$GITHUB_REF_NAME-x86_64.flatpak" SHA256SUMS --clobber
+          shasum -a 256 "flashkit-md-$GITHUB_REF_NAME-${{ matrix.arch }}.flatpak" >> SHA256SUMS
+          gh release upload "$GITHUB_REF_NAME" "flashkit-md-$GITHUB_REF_NAME-${{ matrix.arch }}.flatpak" SHA256SUMS --clobber

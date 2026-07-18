@@ -40,7 +40,8 @@ bare GUI binary; the same quarantine note applies
 
 ### Linux
 
-**Flatpak** (x86_64): download `flashkit-md-vX.Y.Z-x86_64.flatpak` and
+**Flatpak** (x86_64, aarch64): download
+`flashkit-md-vX.Y.Z-{x86_64,aarch64}.flatpak` for your architecture and
 
 ```
 flatpak install ./flashkit-md-vX.Y.Z-x86_64.flatpak

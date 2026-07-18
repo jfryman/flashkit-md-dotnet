@@ -57,9 +57,10 @@ certificate ever moves to one.
 ## Flatpak
 
 The `flatpak` job needs no secrets: it builds
-`flashkit-md-vX.Y.Z-x86_64.flatpak` from
+`flashkit-md-vX.Y.Z-{x86_64,aarch64}.flatpak` from
 `packaging/flatpak/io.github.jfryman.FlashKitMD.yml` after the release is
-created, uploads it, and appends its checksum to `SHA256SUMS`. The same
+created (aarch64 natively on GitHub's arm64 runners), uploads them, and
+appends their checksums to `SHA256SUMS`. The same
 build runs on every push to main (CI `flatpak` job) so manifest breakage
 is caught before release day. Submitting the app to Flathub is a separate
 manual process (a PR to flathub/flathub referencing this manifest); the

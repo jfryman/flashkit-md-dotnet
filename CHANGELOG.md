@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+FEATURES:
+
+ * release: the Flatpak bundle is now also built for aarch64
+   (`flashkit-md-vX.Y.Z-aarch64.flatpak`), natively on GitHub's arm64
+   runners.
+
 ## 1.5.1 (July 18, 2026)
 
 FEATURES:

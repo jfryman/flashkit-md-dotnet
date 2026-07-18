@@ -44,16 +44,29 @@ jobs:
 
   flatpak:
     # Exercises the Flatpak manifest on every push so it cannot rot
-    # between releases; the release workflow builds the shipping bundle.
+    # between releases; the release workflow builds the shipping bundles.
+    # aarch64 builds natively on GitHub's arm64 runners — no qemu.
     needs: ci
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - arch: x86_64
+            rid: linux-x64
+            runner: ubuntu-latest
+          - arch: aarch64
+            rid: linux-arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
-      - name: Publish linux-x64
-        run: RIDS=linux-x64 ./publish.sh
+      - name: Publish ${{ matrix.rid }} and stage for the manifest
+        run: |
+          RIDS=${{ matrix.rid }} ./publish.sh
+          mkdir -p artifacts/flatpak-stage
+          cp "artifacts/${{ matrix.rid }}/flashkit-md" "artifacts/${{ matrix.rid }}/flashkit-md-gui" artifacts/flatpak-stage/
       - name: Install flatpak-builder and runtimes
         run: |
           sudo apt-get update
@@ -64,8 +77,8 @@ jobs:
         run: |
           flatpak-builder --user --force-clean --repo=flatpak-repo flatpak-build \
             packaging/flatpak/io.github.jfryman.FlashKitMD.yml
-          flatpak build-bundle flatpak-repo flashkit-md-x86_64.flatpak io.github.jfryman.FlashKitMD
+          flatpak build-bundle flatpak-repo "flashkit-md-${{ matrix.arch }}.flatpak" io.github.jfryman.FlashKitMD
       - uses: actions/upload-artifact@v4
         with:
-          name: flashkit-md-flatpak-x86_64
-          path: flashkit-md-x86_64.flatpak
+          name: flashkit-md-flatpak-${{ matrix.arch }}
+          path: flashkit-md-${{ matrix.arch }}.flatpak

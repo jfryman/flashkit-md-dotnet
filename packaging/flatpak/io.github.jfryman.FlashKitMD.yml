@@ -1,8 +1,13 @@
-# Flatpak manifest wrapping the self-contained linux-x64 binaries built
-# by publish.sh (run `RIDS=linux-x64 ./publish.sh` first). The .NET build
+# Flatpak manifest wrapping the self-contained Linux binaries built by
+# publish.sh. The manifest is arch-neutral: stage the binaries for the
+# target arch into artifacts/flatpak-stage/ first (linux-x64 → x86_64,
+# linux-arm64 → aarch64) and build on a host of that arch. The .NET build
 # is self-contained single-file, so no dotnet SDK extension is needed.
 #
 # Build a bundle:
+#   RIDS=linux-x64 ./publish.sh
+#   mkdir -p artifacts/flatpak-stage
+#   cp artifacts/linux-x64/flashkit-md artifacts/linux-x64/flashkit-md-gui artifacts/flatpak-stage/
 #   flatpak-builder --user --force-clean --repo=repo build-dir \
 #     packaging/flatpak/io.github.jfryman.FlashKitMD.yml
 #   flatpak build-bundle repo flashkit-md-x86_64.flatpak io.github.jfryman.FlashKitMD
@@ -33,9 +38,9 @@ modules:
       - install -Dm644 io.github.jfryman.FlashKitMD.png /app/share/icons/hicolor/128x128/apps/io.github.jfryman.FlashKitMD.png
     sources:
       - type: file
-        path: ../../artifacts/linux-x64/flashkit-md
+        path: ../../artifacts/flatpak-stage/flashkit-md
       - type: file
-        path: ../../artifacts/linux-x64/flashkit-md-gui
+        path: ../../artifacts/flatpak-stage/flashkit-md-gui
       - type: file
         path: io.github.jfryman.FlashKitMD.desktop
       - type: file
