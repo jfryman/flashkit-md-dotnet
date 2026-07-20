@@ -13,6 +13,11 @@ BUG FIXES:
    labels beneath the chooser buttons; Read/Write button pairs are
    padded to a uniform width so their brackets line up.
 
+IMPROVEMENTS:
+
+ * tui: the device/cartridge status line at the bottom now sits in a
+   bordered bar with left padding, matching the GUI's status bar.
+
 ## 1.6.0 (July 20, 2026)
 
 BUG FIXES:

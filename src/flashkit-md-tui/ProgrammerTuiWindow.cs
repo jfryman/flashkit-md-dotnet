@@ -114,7 +114,7 @@ public class ProgrammerTuiWindow : Window
             Caption("RAM size", 2), At(InfoRamSize, 2),
             Caption("Header ROM size", 3), At(InfoHeaderSize, 3));
 
-        var transFrame = new FrameView { Title = "Transactions", X = LeftWidth, Y = 6, Width = Dim.Fill(), Height = Dim.Fill(2) };
+        var transFrame = new FrameView { Title = "Transactions", X = LeftWidth, Y = 6, Width = Dim.Fill(), Height = Dim.Fill(4) };
         logList.X = 0;
         logList.Y = 0;
         logList.Width = Dim.Fill();
@@ -123,24 +123,27 @@ public class ProgrammerTuiWindow : Window
         transFrame.Add(logList);
 
         OperationProgress.X = 0;
-        OperationProgress.Y = Pos.AnchorEnd(2);
+        OperationProgress.Y = Pos.AnchorEnd(4);
         OperationProgress.Width = Dim.Fill();
 
-        // The cart bullet chains off the device label rather than sitting at
-        // a fixed column: macOS port names ("/dev/cu.usbserial-…") push the
-        // device text past any fixed offset and the two would overlap.
-        // Mirrors the GUI status bar's StackPanel spacing.
-        DeviceDot.X = 0;
-        DeviceDot.Y = Pos.AnchorEnd(1);
-        DeviceStatusLabel.X = 2;
-        DeviceStatusLabel.Y = Pos.AnchorEnd(1);
+        // Bordered status bar along the bottom, like the GUI's. The cart
+        // bullet chains off the device label rather than sitting at a fixed
+        // column: macOS port names ("/dev/cu.usbserial-…") push the device
+        // text past any fixed offset and the two would overlap. Mirrors the
+        // GUI status bar's padding and StackPanel spacing.
+        var statusFrame = new FrameView { X = 0, Y = Pos.AnchorEnd(3), Width = Dim.Fill(), Height = 3 };
+        DeviceDot.X = 1;
+        DeviceDot.Y = 0;
+        DeviceStatusLabel.X = 3;
+        DeviceStatusLabel.Y = 0;
         CartDot.X = Pos.Right(DeviceStatusLabel) + 4;
-        CartDot.Y = Pos.AnchorEnd(1);
+        CartDot.Y = 0;
         CartStatusLabel.X = Pos.Right(CartDot) + 2;
-        CartStatusLabel.Y = Pos.AnchorEnd(1);
+        CartStatusLabel.Y = 0;
+        statusFrame.Add(DeviceDot, DeviceStatusLabel, CartDot, CartStatusLabel);
 
         Add(romFrame, ramFrame, autoDumpFrame, autoWriteFrame, infoFrame, transFrame,
-            OperationProgress, DeviceDot, DeviceStatusLabel, CartDot, CartStatusLabel);
+            OperationProgress, statusFrame);
 
         BtnReadRom.Accepting += (_, e) => { e.Handled = true; _ = model.ReadRomAsync(); };
         BtnWriteRom.Accepting += (_, e) => { e.Handled = true; _ = model.WriteRomAsync(); };
