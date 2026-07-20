@@ -153,6 +153,33 @@ public class ProgrammerTuiWindowTests : IDisposable
         Assert.DoesNotContain(focused, v => v is FrameView);
     }
 
+    [Fact]
+    public void resolve_save_path_appends_suggested_name_to_a_directory()
+    {
+        // The save dialog returns its path-box text; navigating into a
+        // folder leaves a directory there, and writing to a directory
+        // fails with "Access to the path … is denied".
+        string subdir = Path.Combine(dir, "target");
+        Directory.CreateDirectory(subdir);
+
+        Assert.Equal(
+            Path.Combine(subdir, "SHINING FORCE 2 (U).bin"),
+            ProgrammerTuiWindow.ResolveSavePath(subdir, "SHINING FORCE 2 (U).bin"));
+    }
+
+    [Fact]
+    public void resolve_save_path_keeps_a_file_path_as_is()
+    {
+        string file = Path.Combine(dir, "my dump.bin");
+        Assert.Equal(file, ProgrammerTuiWindow.ResolveSavePath(file, "SHINING FORCE 2 (U).bin"));
+    }
+
+    [Fact]
+    public void resolve_save_path_passes_through_cancellation()
+    {
+        Assert.Null(ProgrammerTuiWindow.ResolveSavePath(null, "whatever.bin"));
+    }
+
     sealed class UnopenablePort : ISerialPort
     {
         readonly Exception error;

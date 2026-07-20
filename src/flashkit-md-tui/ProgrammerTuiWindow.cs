@@ -306,11 +306,28 @@ public class ProgrammerTuiWindow : Window
     Task<string?> DefaultPickSavePath(string suggestedName, PromptFileKind kind) =>
         OnMainLoop<string?>(() =>
         {
+            // Seed a full path (dir + name), not a bare filename, so the
+            // dialog opens with a real directory context and a sensible
+            // suggestion.
             using var d = new SaveDialog { Title = "Save " + Describe(kind) };
-            d.Path = suggestedName;
+            d.Path = Path.Combine(Directory.GetCurrentDirectory(), suggestedName);
             RunningApp.Run(d, null);
-            return DialogResult(d);
+            return ResolveSavePath(DialogResult(d), suggestedName);
         });
+
+    /// <summary>
+    /// SaveDialog.Path/FileName is just the dialog's path-box text.
+    /// Navigating into a folder to pick a save location leaves a directory
+    /// there, and writing to a directory fails with "Access to the path …
+    /// is denied" — so when the chosen path is an existing directory, save
+    /// the suggested name into it instead.
+    /// </summary>
+    internal static string? ResolveSavePath(string? dialogPath, string suggestedName)
+    {
+        if (dialogPath == null) return null;
+        if (Directory.Exists(dialogPath)) return Path.Combine(dialogPath, suggestedName);
+        return dialogPath;
+    }
 
     Task<string?> DefaultPickOpenPath(PromptFileKind kind) =>
         OnMainLoop<string?>(() =>

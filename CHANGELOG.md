@@ -4,6 +4,11 @@
 
 BUG FIXES:
 
+ * tui: a direct Read ROM/RAM dump failed with "Access to the path … is
+   denied" when the save location was chosen by navigating into a folder
+   — the dialog then hands back the directory, and the dump was written
+   to it. The suggested filename is now saved into the chosen directory
+   (auto-dumps, which build the path themselves, were never affected).
  * tui: opening the file picker for Read ROM/RAM corrupted the screen
    (garbled title bar, stray borders). The picker's operation reaches
    the dialog through a background-thread continuation, and running the
