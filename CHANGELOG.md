@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.9.0 (July 20, 2026)
 
 IMPROVEMENTS:
 
