@@ -116,13 +116,17 @@ public class ProgrammerTuiWindow : Window
         OperationProgress.Y = Pos.AnchorEnd(2);
         OperationProgress.Width = Dim.Fill();
 
+        // The cart bullet chains off the device label rather than sitting at
+        // a fixed column: macOS port names ("/dev/cu.usbserial-…") push the
+        // device text past any fixed offset and the two would overlap.
+        // Mirrors the GUI status bar's StackPanel spacing.
         DeviceDot.X = 0;
         DeviceDot.Y = Pos.AnchorEnd(1);
         DeviceStatusLabel.X = 2;
         DeviceStatusLabel.Y = Pos.AnchorEnd(1);
-        CartDot.X = 46;
+        CartDot.X = Pos.Right(DeviceStatusLabel) + 4;
         CartDot.Y = Pos.AnchorEnd(1);
-        CartStatusLabel.X = 48;
+        CartStatusLabel.X = Pos.Right(CartDot) + 2;
         CartStatusLabel.Y = Pos.AnchorEnd(1);
 
         Add(romFrame, ramFrame, autoDumpFrame, autoWriteFrame, infoFrame, transFrame,

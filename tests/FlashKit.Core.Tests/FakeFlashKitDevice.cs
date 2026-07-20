@@ -75,7 +75,7 @@ sealed class FakeFlashKitDevice : ISerialPort
     public byte[] Rom => rom;
     public byte[] Sram => sram ?? throw new InvalidOperationException("no SRAM configured");
 
-    public string PortName => "FAKE";
+    public string PortName { get; init; } = "FAKE";
     public int ReadTimeout { get; set; }
     public int WriteTimeout { get; set; }
     public void Open()

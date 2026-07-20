@@ -79,6 +79,28 @@ public class ProgrammerTuiWindowTests : IDisposable
         Assert.Equal("—", window.CartStatusLabel.Text);
     }
 
+    [Fact]
+    public async Task bottom_status_bullets_never_overlap_on_long_port_names()
+    {
+        // macOS port names push the device text past column 46, where the
+        // cart bullet used to sit at a fixed offset — they overlapped.
+        var fake = new FakeFlashKitDevice(TestRoms.MakeRom(0x80000))
+        {
+            PortName = "/dev/cu.usbserial-A50285BI",
+        };
+        var window = Window(fake);
+
+        await window.RefreshAsync();
+        window.Frame = new System.Drawing.Rectangle(0, 0, 120, 30);
+        window.Layout();
+
+        Assert.Equal("Programmer connected on /dev/cu.usbserial-A50285BI",
+            window.DeviceStatusLabel.Text);
+        Assert.True(window.CartDot.Frame.X >= window.DeviceStatusLabel.Frame.Right + 4,
+            $"cart dot at {window.CartDot.Frame.X}, device text ends at {window.DeviceStatusLabel.Frame.Right}");
+        Assert.True(window.CartStatusLabel.Frame.X >= window.CartDot.Frame.Right + 2);
+    }
+
     sealed class UnopenablePort : ISerialPort
     {
         readonly Exception error;

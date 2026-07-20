@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+BUG FIXES:
+
+ * tui: the cartridge status in the bottom bar sat at a fixed column and
+   overlapped the device status when the port name was long (macOS
+   `/dev/cu.usbserial-…`); it now flows after the device text with
+   padding, like the GUI status bar.
+
 ## 1.6.0 (July 20, 2026)
 
 BUG FIXES:
