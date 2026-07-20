@@ -1,3 +1,5 @@
+using System.Linq;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Ellipse = Avalonia.Controls.Shapes.Ellipse;
@@ -39,6 +41,27 @@ public class MainWindowTests : IDisposable
             () => new[] { "/dev/ttyUSB0" }, _ => fake, HostOs.Linux));
         window.Show();
         return window;
+    }
+
+    [AvaloniaFact]
+    public void left_column_scroll_area_stays_above_the_status_bar()
+    {
+        // The left column (five panels including IPS) lives in a ScrollViewer
+        // confined to the content row, so its contents are clipped/scrolled
+        // and can never overflow onto the bottom status bar — whatever the
+        // platform's control sizes. A scroll bar appears if they don't fit.
+        var window = Window(new FakeFlashKitDevice(TestRoms.MakeRom(0x80000)));
+        window.UpdateLayout();
+
+        var scroll = window.FindControl<Button>("BtnCreatePatch")!
+            .GetVisualAncestors().OfType<ScrollViewer>().First();
+        var statusText = window.FindControl<TextBlock>("DeviceStatusText")!;
+
+        double scrollBottom = scroll.TranslatePoint(new Point(0, scroll.Bounds.Height), window)!.Value.Y;
+        double statusTop = statusText.TranslatePoint(new Point(0, 0), window)!.Value.Y;
+
+        Assert.True(scrollBottom <= statusTop,
+            $"left column scroll area ({scrollBottom}) overlaps the status bar ({statusTop})");
     }
 
     static string Text(MainWindow window, string name) =>

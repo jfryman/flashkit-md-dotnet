@@ -4,8 +4,8 @@
         x:Class="FlashKit.Gui.MainWindow"
         Title="Flashkit-md"
         Icon="/Assets/flashkit.ico"
-        Width="820" Height="760"
-        MinWidth="700" MinHeight="760">
+        Width="820" Height="860"
+        MinWidth="700" MinHeight="560">
 
   <Window.Styles>
     <Style Selector="TextBlock.label">
@@ -51,9 +51,16 @@
       </StackPanel>
     </Border>
 
-    <!-- The last row stretches so the Auto-write panel's bottom edge always
-         lines up with the transaction panel's, whatever the window size. -->
-    <Grid Grid.Row="0" Grid.Column="0" RowDefinitions="Auto,12,Auto,12,Auto,12,Auto,12,*">
+    <!-- The action/auto/IPS panels are a natural-height stack in a
+         ScrollViewer: on platforms where controls render taller than the
+         window can hold, the column scrolls instead of overflowing onto the
+         status bar below. -->
+    <ScrollViewer Grid.Row="0" Grid.Column="0"
+                  VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+    <!-- Top-aligned so the grid reports its natural height to the scroll
+         viewer (rather than stretching to fill it, which would defeat
+         scrolling). -->
+    <Grid VerticalAlignment="Top" RowDefinitions="Auto,12,Auto,12,Auto,12,Auto,12,Auto">
       <Border Grid.Row="0"
               BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
               BorderThickness="1" CornerRadius="4" Padding="8">
@@ -128,6 +135,7 @@
         </StackPanel>
       </Border>
     </Grid>
+    </ScrollViewer>
 
     <Grid Grid.Row="0" Grid.Column="2" RowDefinitions="Auto,12,*">
 
