@@ -1,5 +1,6 @@
 using System.Linq;
 using Avalonia;
+using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Ellipse = Avalonia.Controls.Shapes.Ellipse;
@@ -62,6 +63,26 @@ public class MainWindowTests : IDisposable
 
         Assert.True(scrollBottom <= statusTop,
             $"left column scroll area ({scrollBottom}) overlaps the status bar ({statusTop})");
+    }
+
+    [AvaloniaFact]
+    public void status_indicators_are_accessible()
+    {
+        var window = Window(new FakeFlashKitDevice(TestRoms.MakeRom(0x80000)));
+
+        // The colour-only dots are redundant with the adjacent text, so they
+        // are hidden from assistive tech; the status text is a live region so
+        // connect/disconnect is announced without the user going looking.
+        foreach (var dot in new[] { "DeviceDot", "CartDot" })
+            Assert.Equal(AccessibilityView.Raw,
+                AutomationProperties.GetAccessibilityView(window.FindControl<Ellipse>(dot)!));
+        foreach (var text in new[] { "DeviceStatusText", "CartStatusText" })
+            Assert.Equal(AutomationLiveSetting.Polite,
+                AutomationProperties.GetLiveSetting(window.FindControl<TextBlock>(text)!));
+
+        // Primary actions carry an access-key mnemonic (the '_' before the key).
+        Assert.Contains('_', Btn(window, "BtnReadRom").Content as string ?? "");
+        Assert.Contains('_', Btn(window, "BtnWriteRom").Content as string ?? "");
     }
 
     static string Text(MainWindow window, string name) =>

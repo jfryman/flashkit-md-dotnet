@@ -40,13 +40,24 @@
             BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
             BorderThickness="1" CornerRadius="4" Padding="10,8">
       <StackPanel Orientation="Horizontal" Spacing="24">
+        <!-- The dots are a redundant colour cue for the adjacent text, so
+             they are hidden from assistive tech (AccessibilityView=Raw). The
+             status text is a polite live region: screen readers announce it
+             when the poller flips connected/disconnected or the cart changes,
+             without the user having to go looking. -->
         <StackPanel Orientation="Horizontal" Spacing="8">
-          <Ellipse x:Name="DeviceDot" Width="10" Height="10" Fill="#8B949E" VerticalAlignment="Center" />
-          <TextBlock x:Name="DeviceStatusText" Text="Looking for programmer..." VerticalAlignment="Center" />
+          <Ellipse x:Name="DeviceDot" Width="10" Height="10" Fill="#8B949E" VerticalAlignment="Center"
+                   AutomationProperties.AccessibilityView="Raw" />
+          <TextBlock x:Name="DeviceStatusText" Text="Looking for programmer..." VerticalAlignment="Center"
+                     AutomationProperties.HelpText="Programmer status"
+                     AutomationProperties.LiveSetting="Polite" />
         </StackPanel>
         <StackPanel Orientation="Horizontal" Spacing="8">
-          <Ellipse x:Name="CartDot" Width="10" Height="10" Fill="#8B949E" VerticalAlignment="Center" />
-          <TextBlock x:Name="CartStatusText" Text="—" VerticalAlignment="Center" />
+          <Ellipse x:Name="CartDot" Width="10" Height="10" Fill="#8B949E" VerticalAlignment="Center"
+                   AutomationProperties.AccessibilityView="Raw" />
+          <TextBlock x:Name="CartStatusText" Text="—" VerticalAlignment="Center"
+                     AutomationProperties.HelpText="Cartridge status"
+                     AutomationProperties.LiveSetting="Polite" />
         </StackPanel>
       </StackPanel>
     </Border>
@@ -66,10 +77,10 @@
               BorderThickness="1" CornerRadius="4" Padding="8">
         <StackPanel Spacing="8">
           <TextBlock Text="ROM" FontWeight="SemiBold" />
-          <Button x:Name="BtnReadRom" Content="Read ROM" Height="30"
+          <Button x:Name="BtnReadRom" Content="_Read ROM" Height="30"
                   HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
                   Click="OnReadRom" />
-          <Button x:Name="BtnWriteRom" Content="Write ROM" Height="30"
+          <Button x:Name="BtnWriteRom" Content="_Write ROM" Height="30"
                   HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
                   Click="OnWriteRom" />
         </StackPanel>
@@ -80,10 +91,10 @@
               BorderThickness="1" CornerRadius="4" Padding="8">
         <StackPanel Spacing="8">
           <TextBlock Text="RAM" FontWeight="SemiBold" />
-          <Button x:Name="BtnReadRam" Content="Read RAM" Height="30"
+          <Button x:Name="BtnReadRam" Content="Read R_AM" Height="30"
                   HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
                   Click="OnReadRam" />
-          <Button x:Name="BtnWriteRam" Content="Write RAM" Height="30"
+          <Button x:Name="BtnWriteRam" Content="Write RA_M" Height="30"
                   HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
                   Click="OnWriteRam" />
         </StackPanel>
@@ -96,7 +107,7 @@
           <TextBlock Text="Auto-dump" FontWeight="SemiBold" />
           <CheckBox x:Name="ChkAutoRom" Content="Dump ROM" IsCheckedChanged="OnAutoDumpToggled" />
           <CheckBox x:Name="ChkAutoRam" Content="Dump RAM" IsCheckedChanged="OnAutoDumpToggled" />
-          <Button x:Name="BtnDumpFolder" Content="Choose folder..."
+          <Button x:Name="BtnDumpFolder" Content="Choose _folder..."
                   HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
                   Click="OnChooseFolder" />
           <TextBlock x:Name="AutoDumpFolderText" Text="No folder chosen" FontSize="11"
@@ -110,7 +121,7 @@
         <StackPanel Spacing="6">
           <TextBlock Text="Auto-write" FontWeight="SemiBold" />
           <CheckBox x:Name="ChkAutoWrite" Content="Write ROM" IsCheckedChanged="OnAutoWriteToggled" />
-          <Button x:Name="BtnWriteFile" Content="Choose file..."
+          <Button x:Name="BtnWriteFile" Content="Choose fi_le..."
                   HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
                   Click="OnChooseWriteFile" />
           <TextBlock x:Name="AutoWriteFileText" Text="No file chosen" FontSize="11"
@@ -124,12 +135,12 @@
         <StackPanel Spacing="6">
           <TextBlock Text="IPS patch" FontWeight="SemiBold" />
           <CheckBox x:Name="ChkApplyPatch" Content="Apply on Read/Write ROM" IsCheckedChanged="OnApplyPatchToggled" />
-          <Button x:Name="BtnPatchFile" Content="Patch file..."
+          <Button x:Name="BtnPatchFile" Content="_Patch file..."
                   HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
                   Click="OnChoosePatch" />
           <TextBlock x:Name="PatchFileText" Text="No patch chosen" FontSize="11"
                      Opacity="0.7" TextTrimming="CharacterEllipsis" />
-          <Button x:Name="BtnCreatePatch" Content="Create patch..."
+          <Button x:Name="BtnCreatePatch" Content="_Create patch..."
                   HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
                   Click="OnCreatePatch" />
         </StackPanel>
@@ -171,8 +182,11 @@
                           BorderThickness="1" CornerRadius="4" Padding="8" Margin="0,0,4,8">
                     <StackPanel Spacing="4">
                       <StackPanel Orientation="Horizontal" Spacing="8">
+                        <!-- Decorative: the outcome is also in Title/Status
+                             text, so hide the colour-only bubble from AT. -->
                         <Ellipse Classes="status" Width="10" Height="10"
                                  VerticalAlignment="Center"
+                                 AutomationProperties.AccessibilityView="Raw"
                                  Classes.running="{Binding Running}"
                                  Classes.ok="{Binding Succeeded}"
                                  Classes.failed="{Binding Failed}" />
@@ -184,8 +198,10 @@
                       <TextBlock Text="{Binding Detail}" FontSize="12" Opacity="0.8"
                                  TextWrapping="Wrap" IsVisible="{Binding HasDetail}" />
                       <ProgressBar Height="8" Minimum="0"
+                                   AutomationProperties.Name="Operation progress"
                                    Maximum="{Binding ProgressMax}" Value="{Binding ProgressValue}" />
                       <TextBlock Text="{Binding Status}" FontSize="12" TextWrapping="Wrap"
+                                 AutomationProperties.LiveSetting="Polite"
                                  Classes.failed="{Binding Failed}" />
                     </StackPanel>
                   </Border>

@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+IMPROVEMENTS:
+
+ * gui: accessibility. The colour-only device/cartridge status dots are
+   hidden from screen readers (their meaning is in the adjacent text), the
+   status line is a live region so connect/disconnect is announced, the
+   per-operation progress bar and result line are labelled, and the action
+   buttons gain access-key mnemonics (Alt+R read ROM, Alt+W write ROM,
+   etc.). Long auto-dump/-write/patch paths get a hover tooltip with the
+   full value.
+
 ## 1.9.0 (July 20, 2026)
 
 IMPROVEMENTS:

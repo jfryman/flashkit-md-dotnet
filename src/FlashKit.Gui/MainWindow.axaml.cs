@@ -106,6 +106,11 @@ public partial class MainWindow : Window
         AutoDumpFolderText.Text = model.AutoDumpFolderDisplay;
         AutoWriteFileText.Text = model.AutoWriteFileDisplay;
         PatchFileText.Text = model.PatchFileDisplay;
+        // These labels ellipsize a long path; surface the full value on hover
+        // (and to assistive tech, which reads the tooltip) so it isn't lost.
+        ToolTip.SetTip(AutoDumpFolderText, model.AutoDumpFolderDisplay);
+        ToolTip.SetTip(AutoWriteFileText, model.AutoWriteFileDisplay);
+        ToolTip.SetTip(PatchFileText, model.PatchFileDisplay);
         if (ChkApplyPatch.IsChecked != model.ApplyPatch) ChkApplyPatch.IsChecked = model.ApplyPatch;
         foreach (var btn in new[] { BtnReadRom, BtnWriteRom, BtnReadRam, BtnWriteRam, BtnCreatePatch })
             btn.IsEnabled = !model.IsBusy;
