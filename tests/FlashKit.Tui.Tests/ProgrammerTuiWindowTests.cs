@@ -258,6 +258,34 @@ public class ProgrammerTuiWindowTests : IDisposable
         Assert.Equal(1f, card.Progress.Fraction); // own bar, filled on success
     }
 
+    [Theory]
+    // Native picker appended its file-type default on top of the suggestion.
+    [InlineData("/dumps/DOOM (U).32x.bin", "DOOM (U).32x", "/dumps/DOOM (U).32x")]
+    [InlineData("/saves/GAME.srm.bin", "GAME.srm", "/saves/GAME.srm")]
+    // Correct paths and deliberate user choices are left untouched.
+    [InlineData("/dumps/DOOM (U).32x", "DOOM (U).32x", "/dumps/DOOM (U).32x")]
+    [InlineData("/dumps/GAME.bin", "GAME.bin", "/dumps/GAME.bin")]
+    [InlineData("/dumps/custom.bin", "DOOM (U).32x", "/dumps/custom.bin")]
+    public void fix_appended_extension_undoes_double_only(string path, string suggested, string expected)
+    {
+        Assert.Equal(expected, FlashKit.Presentation.ProgrammerModel.FixAppendedExtension(path, suggested));
+    }
+
+    [Fact]
+    public async Task read_rom_writes_the_dump_without_a_doubled_extension()
+    {
+        // The picker (some native ones) hands back the appended-default path;
+        // the dump must still land as .32x, not .32x.bin.
+        var window = Window(new FakeFlashKitDevice(TestRoms.MakeRom(0x80000, "DOOM", system: "SEGA 32X")));
+        string doubled = TempFile("DOOM (U).32x.bin");
+        window.PickSavePath = (_, _) => Task.FromResult<string?>(doubled);
+
+        await window.ReadRomAsync();
+
+        Assert.True(File.Exists(TempFile("DOOM (U).32x")));
+        Assert.False(File.Exists(doubled));
+    }
+
     [Fact]
     public async Task read_rom_suggests_32x_extension_for_32X_carts()
     {

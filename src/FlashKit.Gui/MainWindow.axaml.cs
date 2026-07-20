@@ -135,10 +135,19 @@ public partial class MainWindow : Window
 
     async Task<string?> DefaultPickSavePath(string suggestedName, FilePickerFileType type)
     {
+        // Offer exactly the extension being saved (.32x vs .bin), so the
+        // native picker doesn't append its file-type default on top of the
+        // suggested name ("GAME.32x" -> "GAME.32x.bin"). ProgrammerModel
+        // also normalizes the returned path as a backstop.
+        string ext = System.IO.Path.GetExtension(suggestedName).TrimStart('.');
+        var saveType = ext.Length > 0
+            ? new FilePickerFileType(type.Name) { Patterns = new[] { "*." + ext } }
+            : type;
         var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
         {
             SuggestedFileName = suggestedName,
-            FileTypeChoices = new[] { type, FilePickerFileTypes.All },
+            DefaultExtension = ext.Length > 0 ? ext : null,
+            FileTypeChoices = new[] { saveType, FilePickerFileTypes.All },
         });
         return file?.TryGetLocalPath();
     }

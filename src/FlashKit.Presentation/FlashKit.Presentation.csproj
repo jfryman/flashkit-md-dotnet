@@ -11,4 +11,9 @@
     <ProjectReference Include="..\FlashKit.Core\FlashKit.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="FlashKit.Tui.Tests" />
+    <InternalsVisibleTo Include="FlashKit.Gui.Tests" />
+  </ItemGroup>
+
 </Project>

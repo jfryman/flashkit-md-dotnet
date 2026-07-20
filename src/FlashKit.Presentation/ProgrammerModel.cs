@@ -379,8 +379,26 @@ public sealed class ProgrammerModel : INotifyPropertyChanged, IDisposable
             entry.Cancel();
             return;
         }
-        await DumpRomTo(session, entry, path);
+        await DumpRomTo(session, entry, FixAppendedExtension(path, suggested));
     });
+
+    /// <summary>
+    /// Some native save pickers append the file-type's default extension on
+    /// top of a suggested name that already has one (a 32X dump suggested as
+    /// "GAME.32x" comes back "GAME.32x.bin"). When the returned path is the
+    /// intended extension followed by one extra, drop the extra; a genuinely
+    /// different name the user typed is left untouched.
+    /// </summary>
+    internal static string FixAppendedExtension(string path, string suggestedName)
+    {
+        string want = Path.GetExtension(suggestedName);          // ".32x"
+        string appended = Path.GetExtension(path);               // ".bin" if appended
+        if (want.Length == 0 || appended.Length == 0) return path;
+        if (!path.EndsWith(want, StringComparison.OrdinalIgnoreCase)
+            && path.EndsWith(want + appended, StringComparison.OrdinalIgnoreCase))
+            return path[..^appended.Length];
+        return path;
+    }
 
     async Task DumpRomTo(FlashKitSession session, TransactionEntry entry, string path)
     {
@@ -420,12 +438,13 @@ public sealed class ProgrammerModel : INotifyPropertyChanged, IDisposable
     public Task ReadRamAsync() => RunOperation("Read RAM", async (session, entry) =>
     {
         var romName = await Task.Run(session.GetRomName);
-        if (await prompts.PickSavePath(romName + ".srm", PromptFileKind.SaveRam) is not string path)
+        string suggested = romName + ".srm";
+        if (await prompts.PickSavePath(suggested, PromptFileKind.SaveRam) is not string path)
         {
             entry.Cancel();
             return;
         }
-        await DumpRamTo(session, entry, path);
+        await DumpRamTo(session, entry, FixAppendedExtension(path, suggested));
     });
 
     async Task DumpRamTo(FlashKitSession session, TransactionEntry entry, string path)
