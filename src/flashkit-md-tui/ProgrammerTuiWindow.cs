@@ -26,6 +26,7 @@ public class ProgrammerTuiWindow : Window
     const int LeftWidth = 26;
 
     readonly ProgrammerModel model;
+    readonly IApplication? app;
     bool syncingToggles;
 
     internal ProgrammerModel Model => model;
@@ -61,8 +62,9 @@ public class ProgrammerTuiWindow : Window
     internal readonly ObservableCollection<string> TransactionLines = new();
     readonly ListView logList = new();
 
-    public ProgrammerTuiWindow(DeviceConnector? connector = null)
+    public ProgrammerTuiWindow(DeviceConnector? connector = null, IApplication? app = null)
     {
+        this.app = app;
         Title = $"Flashkit-md {VersionInfo.ClientVersion}";
         PickSavePath = DefaultPickSavePath;
         PickOpenPath = DefaultPickOpenPath;
@@ -228,25 +230,28 @@ public class ProgrammerTuiWindow : Window
         public Task<bool> ConfirmAutoWrite() => w.ConfirmAutoWrite();
     }
 
-    static Task<string?> DefaultPickSavePath(string suggestedName, PromptFileKind kind)
+    IApplication RunningApp => app ?? throw new InvalidOperationException(
+        "default prompts need the IApplication passed to the constructor");
+
+    Task<string?> DefaultPickSavePath(string suggestedName, PromptFileKind kind)
     {
         using var d = new SaveDialog { Title = "Save " + Describe(kind) };
         d.Path = suggestedName;
-        Application.Run(d, null);
+        RunningApp.Run(d, null);
         return Task.FromResult(DialogResult(d));
     }
 
-    static Task<string?> DefaultPickOpenPath(PromptFileKind kind)
+    Task<string?> DefaultPickOpenPath(PromptFileKind kind)
     {
         using var d = new FileDialog { Title = "Open " + Describe(kind), OpenMode = OpenMode.File, MustExist = true };
-        Application.Run(d, null);
+        RunningApp.Run(d, null);
         return Task.FromResult(DialogResult(d));
     }
 
-    static Task<string?> DefaultPickFolder()
+    Task<string?> DefaultPickFolder()
     {
         using var d = new FileDialog { Title = "Auto-dump folder", OpenMode = OpenMode.Directory, MustExist = true };
-        Application.Run(d, null);
+        RunningApp.Run(d, null);
         return Task.FromResult(DialogResult(d));
     }
 
@@ -256,10 +261,10 @@ public class ProgrammerTuiWindow : Window
     static string? DialogResult(FileDialog d) =>
         d.Canceled || string.IsNullOrWhiteSpace(d.Path) ? null : d.Path;
 
-    static Task<bool> DefaultConfirmAutoWrite()
+    Task<bool> DefaultConfirmAutoWrite()
     {
         if (AutoWriteWarning.Suppressed) return Task.FromResult(true);
-        int? choice = MessageBox.Query(Application.Instance, AutoWriteWarning.Title, AutoWriteWarning.Text,
+        int? choice = MessageBox.Query(RunningApp, AutoWriteWarning.Title, AutoWriteWarning.Text,
             "Enable auto-write", "Enable, don't ask again", "Cancel");
         if (choice == 1) AutoWriteWarning.Suppress();
         return Task.FromResult(choice is 0 or 1);
