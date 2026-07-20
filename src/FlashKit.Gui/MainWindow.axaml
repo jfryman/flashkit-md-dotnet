@@ -123,7 +123,7 @@
               BorderThickness="1" CornerRadius="4" Padding="8" VerticalAlignment="Top">
         <StackPanel Spacing="6">
           <TextBlock Text="IPS patch" FontWeight="SemiBold" />
-          <CheckBox x:Name="ChkApplyPatch" Content="Apply on read/write" IsCheckedChanged="OnApplyPatchToggled" />
+          <CheckBox x:Name="ChkApplyPatch" Content="Apply on Read/Write ROM" IsCheckedChanged="OnApplyPatchToggled" />
           <Button x:Name="BtnPatchFile" Content="Patch file..."
                   HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
                   Click="OnChoosePatch" />

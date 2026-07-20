@@ -210,7 +210,8 @@ public class ProgrammerTuiWindowTests : IDisposable
         await window.WriteRomAsync();
 
         Assert.Equal(patched, fake.Rom.Take(patched.Length).ToArray());
-        Assert.Contains("patched", window.Cards[0].StatusLabel.Text);
+        // The transaction result names the applied patch, so it is obvious.
+        Assert.Contains("patched with hack.ips", window.Cards[0].StatusLabel.Text);
     }
 
     [Fact]

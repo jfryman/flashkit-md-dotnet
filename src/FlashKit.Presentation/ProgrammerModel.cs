@@ -418,8 +418,8 @@ public sealed class ProgrammerModel : INotifyPropertyChanged, IDisposable
             return;
         }
         // When "apply patch" is armed, patch the dump before saving.
-        byte[]? patch = ApplyPatchEnabled ? await File.ReadAllBytesAsync(patchFile!) : null;
-        await DumpRomTo(session, entry, FixAppendedExtension(path, suggested), patch);
+        await DumpRomTo(session, entry, FixAppendedExtension(path, suggested),
+            ApplyPatchEnabled ? patchFile : null);
     });
 
     /// <summary>
@@ -440,16 +440,15 @@ public sealed class ProgrammerModel : INotifyPropertyChanged, IDisposable
         return path;
     }
 
-    async Task DumpRomTo(FlashKitSession session, TransactionEntry entry, string path, byte[]? patch = null)
+    async Task DumpRomTo(FlashKitSession session, TransactionEntry entry, string path, string? patchPath = null)
     {
         entry.Detail = path;
         entry.Status = "Reading ROM...";
         var progress = TrackProgress(entry);
         var rom = await Task.Run(() => session.ReadRom(p => progress.Report(p)));
-        if (patch != null) rom = IpsPatch.Apply(rom, patch);
+        if (patchPath != null) rom = IpsPatch.Apply(rom, await File.ReadAllBytesAsync(patchPath));
         await File.WriteAllBytesAsync(path, rom);
-        string patched = patch != null ? ", patched" : "";
-        entry.Succeed($"OK — {rom.Length / 1024}K{patched}, MD5 {Md5(rom)}");
+        entry.Succeed($"OK — {rom.Length / 1024}K{PatchedSuffix(patchPath)}, MD5 {Md5(rom)}");
     }
 
     public Task WriteRomAsync() => RunOperation("Write ROM", async (session, entry) =>
@@ -459,15 +458,14 @@ public sealed class ProgrammerModel : INotifyPropertyChanged, IDisposable
             entry.Cancel();
             return;
         }
-        byte[]? patch = ApplyPatchEnabled ? await File.ReadAllBytesAsync(patchFile!) : null;
-        await WriteRomFrom(session, entry, path, patch);
+        await WriteRomFrom(session, entry, path, ApplyPatchEnabled ? patchFile : null);
     });
 
-    async Task WriteRomFrom(FlashKitSession session, TransactionEntry entry, string path, byte[]? patch = null)
+    async Task WriteRomFrom(FlashKitSession session, TransactionEntry entry, string path, string? patchPath = null)
     {
         entry.Detail = path;
         var rom = await File.ReadAllBytesAsync(path);
-        if (patch != null) rom = IpsPatch.Apply(rom, patch);
+        if (patchPath != null) rom = IpsPatch.Apply(rom, await File.ReadAllBytesAsync(patchPath));
         var progress = TrackProgress(entry, phase => phase switch
         {
             OperationPhase.Erase => "Flash erase...",
@@ -476,9 +474,13 @@ public sealed class ProgrammerModel : INotifyPropertyChanged, IDisposable
             _ => null,
         });
         await Task.Run(() => session.WriteRom(rom, progress: p => progress.Report(p)));
-        string patched = patch != null ? ", patched" : "";
-        entry.Succeed($"OK — {rom.Length / 1024}K written{patched}, MD5 {Md5(rom)}");
+        entry.Succeed($"OK — {rom.Length / 1024}K written{PatchedSuffix(patchPath)}, MD5 {Md5(rom)}");
     }
+
+    // Names the applied patch in the transaction result so it is obvious the
+    // dump/flash was patched (and with what).
+    static string PatchedSuffix(string? patchPath) =>
+        patchPath != null ? $", patched with {Path.GetFileName(patchPath)}" : "";
 
     public Task CreatePatchAsync() => RunOperation("Create patch", async (session, entry) =>
     {
