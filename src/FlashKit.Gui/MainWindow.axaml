@@ -1,6 +1,6 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:gui="using:FlashKit.Gui"
+        xmlns:pres="using:FlashKit.Presentation"
         x:Class="FlashKit.Gui.MainWindow"
         Title="Flashkit-md"
         Icon="/Assets/flashkit.ico"
@@ -137,7 +137,7 @@
           <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
             <ItemsControl x:Name="LogList">
               <ItemsControl.ItemTemplate>
-                <DataTemplate x:DataType="gui:TransactionEntry">
+                <DataTemplate x:DataType="pres:TransactionEntry">
                   <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                           BorderThickness="1" CornerRadius="4" Padding="8" Margin="0,0,4,8">
                     <StackPanel Spacing="4">

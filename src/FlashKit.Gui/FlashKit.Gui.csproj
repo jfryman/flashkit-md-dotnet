@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\FlashKit.Core\FlashKit.Core.csproj" />
+    <ProjectReference Include="..\FlashKit.Presentation\FlashKit.Presentation.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

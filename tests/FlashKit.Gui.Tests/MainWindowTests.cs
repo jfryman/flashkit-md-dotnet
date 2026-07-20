@@ -6,6 +6,7 @@ using Avalonia.VisualTree;
 using FlashKit.Core;
 using FlashKit.Core.Tests;
 using FlashKit.Gui;
+using FlashKit.Presentation;
 
 namespace FlashKit.Gui.Tests;
 

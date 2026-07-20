@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace FlashKit.Gui;
+namespace FlashKit.Presentation;
 
 /// <summary>One row in the transaction log: a READ/WRITE of ROM/RAM with its
 /// own progress bar and final status. Mutated on the UI thread only (worker

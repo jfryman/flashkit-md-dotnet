@@ -55,11 +55,21 @@ if the section is missing.
     ReadRam/WriteRam/BakeSave. Synchronous, progress via
     `Action<OperationProgress>` (each phase starts with Done=0),
     `VerifyException` on read-back mismatch, no console/file I/O.
-- `src/flashkit-md/` — CLI: arg parsing, file I/O, rendering.
-- `src/FlashKit.Gui/` — Avalonia GUI mirroring the original WinForms
-  window, also on FlashKitSession; operations run on a worker thread.
-  Headless tests in `tests/FlashKit.Gui.Tests` drive the window against
-  the fake device via the connector/file-picker seams in MainWindow.
+- `src/FlashKit.Presentation/` — shared presentation model for interactive
+  front-ends (GUI now, TUI next). `ProgrammerModel` owns ALL interactive
+  behavior: held-session lifetime (the macOS tcdrain-wedge fix), the
+  device gate, the poll state machine, auto-dump/auto-write (including the
+  deliberately-not-identity-keyed insertion logic), the transaction log,
+  and display strings. INotifyPropertyChanged + `IUserPrompts` for user
+  decisions; must be called on the UI thread (see the class comment).
+  New interactive behavior goes HERE, not in a front-end.
+- `src/flashkit-md/` — CLI: arg parsing, file I/O, rendering over
+  FlashKitSession directly (one-shot commands need no ProgrammerModel).
+- `src/FlashKit.Gui/` — Avalonia adapter over ProgrammerModel: renders
+  model properties into controls, implements IUserPrompts with
+  StorageProvider pickers, drives the poll timer. Headless tests in
+  `tests/FlashKit.Gui.Tests` drive the window against the fake device via
+  the connector/file-picker seams in MainWindow.
 - `flashkit-md-src.zip` — pristine original Windows source (WinForms,
   .NET 4) as distributed by krikzz. Never modify; unzip elsewhere when a
   diff against the original is needed.
