@@ -8,6 +8,10 @@ BUG FIXES:
    overlapped the device status when the port name was long (macOS
    `/dev/cu.usbserial-…`); it now flows after the device text with
    padding, like the GUI status bar.
+ * tui: buttons no longer cast Terminal.Gui's default drop shadow, which
+   rendered as stray black cells after every button and bled onto the
+   labels beneath the chooser buttons; Read/Write button pairs are
+   padded to a uniform width so their brackets line up.
 
 ## 1.6.0 (July 20, 2026)
 

@@ -101,6 +101,26 @@ public class ProgrammerTuiWindowTests : IDisposable
         Assert.True(window.CartStatusLabel.Frame.X >= window.CartDot.Frame.Right + 2);
     }
 
+    [Fact]
+    public void action_buttons_are_uniform_and_shadowless()
+    {
+        // Padded labels keep the bracket spans identical within each pair;
+        // ShadowStyles.None because the default drop shadow rendered as
+        // stray black cells after every button.
+        var window = Window(new FakeFlashKitDevice(TestRoms.MakeRom(0x80000)));
+        window.Frame = new System.Drawing.Rectangle(0, 0, 100, 28);
+        window.Layout();
+
+        var actionButtons = new[]
+        {
+            window.BtnReadRom, window.BtnWriteRom, window.BtnReadRam, window.BtnWriteRam,
+        };
+        Assert.Single(actionButtons.Select(b => b.Frame.Width).Distinct());
+
+        foreach (var b in actionButtons.Concat(new[] { window.BtnDumpFolder, window.BtnWriteFile }))
+            Assert.Equal(Terminal.Gui.ViewBase.ShadowStyles.None, b.ShadowStyle);
+    }
+
     sealed class UnopenablePort : ISerialPort
     {
         readonly Exception error;

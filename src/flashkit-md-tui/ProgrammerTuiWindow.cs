@@ -39,12 +39,22 @@ public class ProgrammerTuiWindow : Window
     internal Func<Task<string?>> PickFolder;
     internal Func<Task<bool>> ConfirmAutoWrite;
 
-    internal readonly Button BtnReadRom = new() { Text = "Read ROM" };
-    internal readonly Button BtnWriteRom = new() { Text = "Write ROM" };
-    internal readonly Button BtnReadRam = new() { Text = "Read RAM" };
-    internal readonly Button BtnWriteRam = new() { Text = "Write RAM" };
-    internal readonly Button BtnDumpFolder = new() { Text = "Choose folder..." };
-    internal readonly Button BtnWriteFile = new() { Text = "Choose file..." };
+    // Labels are padded to a common length so the button brackets span the
+    // same columns; ShadowStyle.None because the default drop shadow reads
+    // as stray black cells after every button (and bleeds onto the label
+    // row beneath the chooser buttons).
+    internal readonly Button BtnReadRom = MakeButton("Read ROM ");
+    internal readonly Button BtnWriteRom = MakeButton("Write ROM");
+    internal readonly Button BtnReadRam = MakeButton("Read RAM ");
+    internal readonly Button BtnWriteRam = MakeButton("Write RAM");
+    internal readonly Button BtnDumpFolder = MakeButton("Choose folder...");
+    internal readonly Button BtnWriteFile = MakeButton("Choose file...");
+
+    static Button MakeButton(string text) => new()
+    {
+        Text = text,
+        ShadowStyle = ShadowStyles.None,
+    };
     internal readonly CheckBox ChkAutoRom = new() { Text = "Dump ROM" };
     internal readonly CheckBox ChkAutoRam = new() { Text = "Dump RAM" };
     internal readonly CheckBox ChkAutoWrite = new() { Text = "Write ROM" };
