@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+BUG FIXES:
+
+ * cli: `--help`/usage descriptions now line up in a single column;
+   flags that take an argument (`--apply-patch <ips>`, `--create-patch
+   <base>`, `--no-flash-check`) put their description on the next line
+   instead of pushing it out of the column.
+
 ## 1.8.0 (July 20, 2026)
 
 FEATURES:

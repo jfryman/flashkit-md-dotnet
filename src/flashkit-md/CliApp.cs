@@ -19,18 +19,19 @@ public sealed class CliApp
               --trust-header dump the size the ROM header declares instead
                              of the mirror-probed size (useful on flash
                              carts, where probing can misjudge the extent)
-              --apply-patch <ips>   apply an IPS patch to the dump before
-                             saving
-              --create-patch <base>   diff the dump against <base> and write
-                             an IPS patch instead of the ROM (default file:
-                             <ROM name>.ips)
+              --apply-patch <ips>
+                             apply an IPS patch to the dump before saving
+              --create-patch <base>
+                             diff the dump against <base> and write an IPS
+                             patch instead of the ROM (default: <name>.ips)
           write-rom <file>   erase flash cart and write ROM image
               --full-erase   erase the entire 4 MB chip first, so no stale
                              data above the image shows up as ghost saves
                              (only for carts with a full-size 4 MB chip)
               --patch <ips>  apply an IPS patch to the image before flashing
-              --no-flash-check   skip the CFI flash-presence check that
-                             write-rom and bake-save run before erasing
+              --no-flash-check
+                             skip the CFI flash-presence check that write-rom
+                             and bake-save run before erasing
           read-ram [file]    dump save RAM (default file: <ROM name>.srm)
           write-ram <file>   write save RAM from file
           bake-save <file>   program a save image into flash at the save
