@@ -109,6 +109,41 @@ public sealed class ProgrammerModel : INotifyPropertyChanged, IDisposable
     public string AutoDumpFolderDisplay { get => autoDumpFolderDisplay; private set => Set(ref autoDumpFolderDisplay, value); }
     public string AutoWriteFileDisplay { get => autoWriteFileDisplay; private set => Set(ref autoWriteFileDisplay, value); }
 
+    // --- IPS patching --------------------------------------------------
+
+    string? patchFile;
+    bool applyPatch;
+    string patchFileDisplay = "No patch chosen";
+
+    /// <summary>When on (and a patch is chosen), the manual Read ROM and
+    /// Write ROM operations apply the patch — to the dump before saving, and
+    /// to the image before flashing. Auto-dump/auto-write are unaffected.</summary>
+    public bool ApplyPatch { get => applyPatch; private set => Set(ref applyPatch, value); }
+    public string PatchFileDisplay { get => patchFileDisplay; private set => Set(ref patchFileDisplay, value); }
+
+    bool ApplyPatchEnabled => applyPatch && patchFile != null;
+
+    /// <summary>Toggling on prompts for a patch file if none is chosen;
+    /// cancelling leaves it off. Returns the effective state.</summary>
+    public async Task<bool> RequestApplyPatchAsync(bool on)
+    {
+        if (on && patchFile == null)
+        {
+            patchFile = await prompts.PickOpenPath(PromptFileKind.IpsPatch);
+            PatchFileDisplay = patchFile is string f ? Path.GetFileName(f) : "No patch chosen";
+            if (patchFile == null) on = false;
+        }
+        ApplyPatch = on;
+        return on;
+    }
+
+    public async Task ChoosePatchFileAsync()
+    {
+        if (await prompts.PickOpenPath(PromptFileKind.IpsPatch) is not string file) return;
+        patchFile = file;
+        PatchFileDisplay = Path.GetFileName(file);
+    }
+
     /// <summary>Auto-dump and auto-write must not run together (dumping a
     /// cart that is about to be erased, or writing one being archived, is
     /// never what the user meant).</summary>
@@ -382,7 +417,9 @@ public sealed class ProgrammerModel : INotifyPropertyChanged, IDisposable
             entry.Cancel();
             return;
         }
-        await DumpRomTo(session, entry, FixAppendedExtension(path, suggested));
+        // When "apply patch" is armed, patch the dump before saving.
+        byte[]? patch = ApplyPatchEnabled ? await File.ReadAllBytesAsync(patchFile!) : null;
+        await DumpRomTo(session, entry, FixAppendedExtension(path, suggested), patch);
     });
 
     /// <summary>
@@ -403,14 +440,16 @@ public sealed class ProgrammerModel : INotifyPropertyChanged, IDisposable
         return path;
     }
 
-    async Task DumpRomTo(FlashKitSession session, TransactionEntry entry, string path)
+    async Task DumpRomTo(FlashKitSession session, TransactionEntry entry, string path, byte[]? patch = null)
     {
         entry.Detail = path;
         entry.Status = "Reading ROM...";
         var progress = TrackProgress(entry);
         var rom = await Task.Run(() => session.ReadRom(p => progress.Report(p)));
+        if (patch != null) rom = IpsPatch.Apply(rom, patch);
         await File.WriteAllBytesAsync(path, rom);
-        entry.Succeed($"OK — {rom.Length / 1024}K, MD5 {Md5(rom)}");
+        string patched = patch != null ? ", patched" : "";
+        entry.Succeed($"OK — {rom.Length / 1024}K{patched}, MD5 {Md5(rom)}");
     }
 
     public Task WriteRomAsync() => RunOperation("Write ROM", async (session, entry) =>
@@ -420,13 +459,15 @@ public sealed class ProgrammerModel : INotifyPropertyChanged, IDisposable
             entry.Cancel();
             return;
         }
-        await WriteRomFrom(session, entry, path);
+        byte[]? patch = ApplyPatchEnabled ? await File.ReadAllBytesAsync(patchFile!) : null;
+        await WriteRomFrom(session, entry, path, patch);
     });
 
-    async Task WriteRomFrom(FlashKitSession session, TransactionEntry entry, string path)
+    async Task WriteRomFrom(FlashKitSession session, TransactionEntry entry, string path, byte[]? patch = null)
     {
         entry.Detail = path;
         var rom = await File.ReadAllBytesAsync(path);
+        if (patch != null) rom = IpsPatch.Apply(rom, patch);
         var progress = TrackProgress(entry, phase => phase switch
         {
             OperationPhase.Erase => "Flash erase...",
@@ -435,8 +476,33 @@ public sealed class ProgrammerModel : INotifyPropertyChanged, IDisposable
             _ => null,
         });
         await Task.Run(() => session.WriteRom(rom, progress: p => progress.Report(p)));
-        entry.Succeed($"OK — {rom.Length / 1024}K written, MD5 {Md5(rom)}");
+        string patched = patch != null ? ", patched" : "";
+        entry.Succeed($"OK — {rom.Length / 1024}K written{patched}, MD5 {Md5(rom)}");
     }
+
+    public Task CreatePatchAsync() => RunOperation("Create patch", async (session, entry) =>
+    {
+        if (await prompts.PickOpenPath(PromptFileKind.RomImage) is not string basePath)
+        {
+            entry.Cancel();
+            return;
+        }
+        var romName = await Task.Run(session.GetRomName);
+        string suggested = romName + ".ips";
+        if (await prompts.PickSavePath(suggested, PromptFileKind.IpsPatch) is not string outPath)
+        {
+            entry.Cancel();
+            return;
+        }
+        outPath = FixAppendedExtension(outPath, suggested);
+        entry.Detail = outPath;
+        entry.Status = "Reading ROM...";
+        var progress = TrackProgress(entry);
+        var dump = await Task.Run(() => session.ReadRom(p => progress.Report(p)));
+        var patch = IpsPatch.Create(await File.ReadAllBytesAsync(basePath), dump);
+        await File.WriteAllBytesAsync(outPath, patch);
+        entry.Succeed($"OK — {patch.Length}-byte IPS patch vs {Path.GetFileName(basePath)}");
+    });
 
     public Task ReadRamAsync() => RunOperation("Read RAM", async (session, entry) =>
     {

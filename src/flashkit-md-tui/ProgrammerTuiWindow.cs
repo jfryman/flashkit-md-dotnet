@@ -70,6 +70,10 @@ public class ProgrammerTuiWindow : Window
     internal readonly Label InfoHeaderSize = new() { Text = "—" };
     internal readonly Label AutoDumpFolderLabel = new() { Text = "No folder chosen" };
     internal readonly Label AutoWriteFileLabel = new() { Text = "No file chosen" };
+    internal readonly CheckBox ChkApplyPatch = new() { Text = "Apply patch" };
+    internal readonly Button BtnPatchFile = MakeButton("Patch...");
+    internal readonly Label PatchFileLabel = new() { Text = "No patch chosen" };
+    internal readonly Button BtnCreatePatch = MakeButton("Create patch...");
     // Per-transaction cards (newest first) in a scrollable host, mirroring
     // the GUI's log: each entry carries its own progress bar and full
     // status text instead of one truncated line and a global bar.
@@ -118,6 +122,13 @@ public class ProgrammerTuiWindow : Window
         Place(AutoWriteFileLabel, 2);
         autoWriteFrame.Add(ChkAutoWrite, BtnWriteFile, AutoWriteFileLabel);
 
+        var ipsFrame = new FrameView { Title = "IPS patch", X = 0, Y = 19, Width = LeftWidth, Height = 6 };
+        Place(ChkApplyPatch, 0);
+        Place(BtnPatchFile, 1);
+        Place(PatchFileLabel, 2);
+        Place(BtnCreatePatch, 3);
+        ipsFrame.Add(ChkApplyPatch, BtnPatchFile, PatchFileLabel, BtnCreatePatch);
+
         var infoFrame = new FrameView { Title = "Cartridge", X = LeftWidth, Y = 0, Width = Dim.Fill(), Height = 8 };
         infoFrame.Add(
             Caption("Cartridge", 0), At(InfoName, 0),
@@ -149,7 +160,7 @@ public class ProgrammerTuiWindow : Window
         CartStatusLabel.Y = 0;
         statusFrame.Add(DeviceDot, DeviceStatusLabel, CartDot, CartStatusLabel);
 
-        Add(romFrame, ramFrame, autoDumpFrame, autoWriteFrame, infoFrame, transFrame,
+        Add(romFrame, ramFrame, autoDumpFrame, autoWriteFrame, ipsFrame, infoFrame, transFrame,
             statusFrame);
 
         // Plain Tab walks every interactive element across all panels, like
@@ -157,7 +168,7 @@ public class ProgrammerTuiWindow : Window
         // inside the current frame (F6 moves between groups — undiscoverable).
         // Display-only frames opt out of focus entirely, or they'd become
         // empty Tab stops themselves.
-        foreach (var frame in new[] { romFrame, ramFrame, autoDumpFrame, autoWriteFrame, transFrame })
+        foreach (var frame in new[] { romFrame, ramFrame, autoDumpFrame, autoWriteFrame, ipsFrame, transFrame })
             frame.TabStop = TabBehavior.TabStop;
         infoFrame.CanFocus = false;
         statusFrame.CanFocus = false;
@@ -168,9 +179,12 @@ public class ProgrammerTuiWindow : Window
         BtnWriteRam.Accepting += (_, e) => { e.Handled = true; _ = model.WriteRamAsync(); };
         BtnDumpFolder.Accepting += (_, e) => { e.Handled = true; _ = model.ChooseAutoDumpFolderAsync(); };
         BtnWriteFile.Accepting += (_, e) => { e.Handled = true; _ = model.ChooseAutoWriteFileAsync(); };
+        BtnPatchFile.Accepting += (_, e) => { e.Handled = true; _ = model.ChoosePatchFileAsync(); };
+        BtnCreatePatch.Accepting += (_, e) => { e.Handled = true; _ = model.CreatePatchAsync(); };
         ChkAutoRom.ValueChanged += (_, _) => _ = OnToggleAsync(ChkAutoRom, model.RequestAutoDumpRomAsync);
         ChkAutoRam.ValueChanged += (_, _) => _ = OnToggleAsync(ChkAutoRam, model.RequestAutoDumpRamAsync);
         ChkAutoWrite.ValueChanged += (_, _) => _ = OnToggleAsync(ChkAutoWrite, model.RequestAutoWriteAsync);
+        ChkApplyPatch.ValueChanged += (_, _) => _ = OnToggleAsync(ChkApplyPatch, model.RequestApplyPatchAsync);
 
         SyncFromModel();
     }
@@ -221,7 +235,15 @@ public class ProgrammerTuiWindow : Window
         InfoHeaderSize.Text = model.CartHeaderSize;
         AutoDumpFolderLabel.Text = model.AutoDumpFolderDisplay;
         AutoWriteFileLabel.Text = model.AutoWriteFileDisplay;
-        foreach (var btn in new[] { BtnReadRom, BtnWriteRom, BtnReadRam, BtnWriteRam })
+        PatchFileLabel.Text = model.PatchFileDisplay;
+        var wantPatch = model.ApplyPatch ? CheckState.Checked : CheckState.UnChecked;
+        if (ChkApplyPatch.Value != wantPatch)
+        {
+            syncingToggles = true;
+            ChkApplyPatch.Value = wantPatch;
+            syncingToggles = false;
+        }
+        foreach (var btn in new[] { BtnReadRom, BtnWriteRom, BtnReadRam, BtnWriteRam, BtnCreatePatch })
             btn.Enabled = !model.IsBusy;
         ChkAutoRom.Enabled = model.CanToggleAutoDump;
         ChkAutoRam.Enabled = model.CanToggleAutoDump;
@@ -352,7 +374,12 @@ public class ProgrammerTuiWindow : Window
         });
 
     static string Describe(PromptFileKind kind) =>
-        kind == PromptFileKind.RomImage ? "ROM image (.bin/.32x)" : "save RAM (.srm)";
+        kind switch
+        {
+            PromptFileKind.RomImage => "ROM image (.bin/.32x)",
+            PromptFileKind.IpsPatch => "IPS patch (.ips)",
+            _ => "save RAM (.srm)",
+        };
 
     static string? DialogResult(FileDialog d) =>
         d.Canceled || string.IsNullOrWhiteSpace(d.Path) ? null : d.Path;

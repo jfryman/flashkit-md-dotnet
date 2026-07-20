@@ -1,6 +1,6 @@
 namespace FlashKit.Presentation;
 
-public enum PromptFileKind { RomImage, SaveRam }
+public enum PromptFileKind { RomImage, SaveRam, IpsPatch }
 
 /// <summary>
 /// Decisions the presentation model must ask the user for. Each front-end

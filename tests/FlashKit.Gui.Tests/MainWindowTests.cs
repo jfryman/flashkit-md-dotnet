@@ -256,6 +256,46 @@ public class MainWindowTests : IDisposable
     }
 
     [AvaloniaFact]
+    public async Task apply_patch_flashes_the_patched_image()
+    {
+        var fake = new FakeFlashKitDevice(new byte[0x400000]) { FlashWritable = true };
+        var window = Window(fake);
+        var baseImg = new byte[0x20000];
+        for (int i = 0; i < baseImg.Length; i++) baseImg[i] = (byte)(i * 5 + 2);
+        var patched = (byte[])baseImg.Clone();
+        patched[0x40] ^= 0xFF;
+        string imgFile = TempFile("img.bin");
+        string patchFile = TempFile("hack.ips");
+        File.WriteAllBytes(imgFile, baseImg);
+        File.WriteAllBytes(patchFile, FlashKit.Core.IpsPatch.Create(baseImg, patched));
+
+        window.PickOpenPath = _ => Task.FromResult<string?>(patchFile);
+        Assert.True(await window.Model.RequestApplyPatchAsync(true));
+        window.PickOpenPath = _ => Task.FromResult<string?>(imgFile);
+        await window.WriteRomAsync();
+
+        Assert.Equal(patched, fake.Rom.Take(patched.Length).ToArray());
+    }
+
+    [AvaloniaFact]
+    public async Task create_patch_writes_an_ips_diff()
+    {
+        var cart = TestRoms.MakeRom(0x80000);
+        var window = Window(new FakeFlashKitDevice(cart));
+        var baseRom = (byte[])cart.Clone();
+        baseRom[0x300] ^= 0xFF;
+        string baseFile = TempFile("base.bin");
+        string outIps = TempFile("out.ips");
+        File.WriteAllBytes(baseFile, baseRom);
+        window.PickOpenPath = _ => Task.FromResult<string?>(baseFile);
+        window.PickSavePath = (_, _) => Task.FromResult<string?>(outIps);
+
+        await window.Model.CreatePatchAsync();
+
+        Assert.Equal(cart, FlashKit.Core.IpsPatch.Apply(baseRom, File.ReadAllBytes(outIps)));
+    }
+
+    [AvaloniaFact]
     public async Task write_rom_without_flash_chip_fails_entry_and_reenables_buttons()
     {
         var window = Window(new FakeFlashKitDevice(TestRoms.MakeRom(0x80000)));

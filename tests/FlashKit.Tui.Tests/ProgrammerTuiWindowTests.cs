@@ -190,6 +190,78 @@ public class ProgrammerTuiWindowTests : IDisposable
         Assert.Null(ProgrammerTuiWindow.ResolveSavePath(null, "whatever.bin"));
     }
 
+    [Fact]
+    public async Task apply_patch_flashes_the_patched_image_on_write()
+    {
+        var fake = new FakeFlashKitDevice(new byte[0x400000]) { FlashWritable = true };
+        var window = Window(fake);
+        var baseImg = new byte[0x20000];
+        for (int i = 0; i < baseImg.Length; i++) baseImg[i] = (byte)(i * 3 + 1);
+        var patched = (byte[])baseImg.Clone();
+        patched[0x100] ^= 0xFF;
+        string imgFile = TempFile("img.bin");
+        string patchFile = TempFile("hack.ips");
+        File.WriteAllBytes(imgFile, baseImg);
+        File.WriteAllBytes(patchFile, FlashKit.Core.IpsPatch.Create(baseImg, patched));
+
+        window.PickOpenPath = _ => Task.FromResult<string?>(patchFile);
+        Assert.True(await window.Model.RequestApplyPatchAsync(true)); // prompts -> patchFile
+        window.PickOpenPath = _ => Task.FromResult<string?>(imgFile);
+        await window.WriteRomAsync();
+
+        Assert.Equal(patched, fake.Rom.Take(patched.Length).ToArray());
+        Assert.Contains("patched", window.Cards[0].StatusLabel.Text);
+    }
+
+    [Fact]
+    public async Task apply_patch_saves_the_patched_dump_on_read()
+    {
+        var cart = TestRoms.MakeRom(0x80000);
+        var window = Window(new FakeFlashKitDevice(cart));
+        var patched = (byte[])cart.Clone();
+        patched[7] ^= 0xFF;
+        string patchFile = TempFile("fix.ips");
+        string outFile = TempFile("dump.bin");
+        File.WriteAllBytes(patchFile, FlashKit.Core.IpsPatch.Create(cart, patched));
+
+        window.PickOpenPath = _ => Task.FromResult<string?>(patchFile);
+        await window.Model.RequestApplyPatchAsync(true);
+        window.PickSavePath = (_, _) => Task.FromResult<string?>(outFile);
+        await window.ReadRomAsync();
+
+        Assert.Equal(patched, File.ReadAllBytes(outFile));
+    }
+
+    [Fact]
+    public async Task create_patch_writes_an_ips_diff_against_the_base()
+    {
+        var cart = TestRoms.MakeRom(0x80000);
+        var window = Window(new FakeFlashKitDevice(cart));
+        var baseRom = (byte[])cart.Clone();
+        baseRom[0x300] ^= 0xFF;
+        string baseFile = TempFile("base.bin");
+        string outIps = TempFile("out.ips");
+        File.WriteAllBytes(baseFile, baseRom);
+
+        window.PickOpenPath = _ => Task.FromResult<string?>(baseFile);
+        window.PickSavePath = (_, _) => Task.FromResult<string?>(outIps);
+        await window.Model.CreatePatchAsync();
+
+        var card = Assert.Single(window.Cards);
+        Assert.Contains("Create patch", card.Title);
+        Assert.Equal(cart, FlashKit.Core.IpsPatch.Apply(baseRom, File.ReadAllBytes(outIps)));
+    }
+
+    [Fact]
+    public async Task cancelling_the_patch_prompt_leaves_apply_off()
+    {
+        var window = Window(new FakeFlashKitDevice(TestRoms.MakeRom(0x80000)));
+        window.PickOpenPath = _ => Task.FromResult<string?>(null);
+
+        Assert.False(await window.Model.RequestApplyPatchAsync(true));
+        Assert.Equal(CheckState.UnChecked, window.ChkApplyPatch.Value);
+    }
+
     sealed class UnopenablePort : ISerialPort
     {
         readonly Exception error;

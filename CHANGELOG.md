@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+FEATURES:
+
+ * core, cli, gui, tui: IPS patching. Apply a patch when flashing
+   (`write-rom --patch <ips>`, or the GUI/TUI "IPS patch" panel's Apply
+   toggle) and when dumping (`read-rom --apply-patch <ips>`, same toggle);
+   create a patch by diffing a dump against a base ROM
+   (`read-rom --create-patch <base>`, or the panel's "Create patch"). The
+   IpsPatch core (apply + create, literal/RLE records, the truncation
+   extension) is fully unit-tested including a create/apply round-trip
+   over random fuzzing. Build scripts moved to eng/.
+
 ## 1.7.0 (July 20, 2026)
 
 FEATURES:

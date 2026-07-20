@@ -22,6 +22,7 @@ public partial class MainWindow : Window
 {
     static readonly FilePickerFileType RomFiles = new("ROM image") { Patterns = new[] { "*.bin", "*.32x" } };
     static readonly FilePickerFileType SaveFiles = new("Save RAM") { Patterns = new[] { "*.srm" } };
+    static readonly FilePickerFileType IpsFiles = new("IPS patch") { Patterns = new[] { "*.ips" } };
     static readonly IBrush PresentBrush = Brush.Parse(StatusPalette.Success);
     static readonly IBrush AbsentBrush = Brush.Parse(StatusPalette.Neutral);
 
@@ -75,8 +76,12 @@ public partial class MainWindow : Window
         readonly MainWindow w;
         public Prompts(MainWindow w) => this.w = w;
 
-        static FilePickerFileType Map(PromptFileKind kind) =>
-            kind == PromptFileKind.RomImage ? RomFiles : SaveFiles;
+        static FilePickerFileType Map(PromptFileKind kind) => kind switch
+        {
+            PromptFileKind.RomImage => RomFiles,
+            PromptFileKind.IpsPatch => IpsFiles,
+            _ => SaveFiles,
+        };
 
         public Task<string?> PickSavePath(string suggestedName, PromptFileKind kind) => w.PickSavePath(suggestedName, Map(kind));
         public Task<string?> PickOpenPath(PromptFileKind kind) => w.PickOpenPath(Map(kind));
@@ -100,7 +105,9 @@ public partial class MainWindow : Window
         InfoHeaderSize.Text = model.CartHeaderSize;
         AutoDumpFolderText.Text = model.AutoDumpFolderDisplay;
         AutoWriteFileText.Text = model.AutoWriteFileDisplay;
-        foreach (var btn in new[] { BtnReadRom, BtnWriteRom, BtnReadRam, BtnWriteRam })
+        PatchFileText.Text = model.PatchFileDisplay;
+        if (ChkApplyPatch.IsChecked != model.ApplyPatch) ChkApplyPatch.IsChecked = model.ApplyPatch;
+        foreach (var btn in new[] { BtnReadRom, BtnWriteRom, BtnReadRam, BtnWriteRam, BtnCreatePatch })
             btn.IsEnabled = !model.IsBusy;
         ChkAutoRom.IsEnabled = model.CanToggleAutoDump;
         ChkAutoRam.IsEnabled = model.CanToggleAutoDump;
@@ -133,6 +140,17 @@ public partial class MainWindow : Window
 
     async void OnChooseWriteFile(object? sender, RoutedEventArgs e) =>
         await model.ChooseAutoWriteFileAsync();
+
+    async void OnApplyPatchToggled(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not CheckBox box) return;
+        box.IsChecked = await model.RequestApplyPatchAsync(box.IsChecked == true);
+    }
+
+    async void OnChoosePatch(object? sender, RoutedEventArgs e) =>
+        await model.ChoosePatchFileAsync();
+
+    void OnCreatePatch(object? sender, RoutedEventArgs e) => _ = model.CreatePatchAsync();
 
     async Task<string?> DefaultPickSavePath(string suggestedName, FilePickerFileType type)
     {

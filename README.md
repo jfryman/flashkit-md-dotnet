@@ -106,6 +106,10 @@ progress bar and result (size and MD5, or the error).
   Destructive by design, so it asks for confirmation when enabled;
   cartridges without a writable flash chip (retail games) are detected
   and skipped. Auto-dump and auto-write cannot be enabled together.
+- **IPS patch** — tick *Apply patch* and pick a `.ips`, and Read/Write ROM
+  apply it (to the dump before saving, and to the image before flashing).
+  *Create patch* dumps the cart and writes the diff against a base ROM you
+  choose. The same panel exists in the TUI.
 
 ## Using the CLI
 
@@ -116,8 +120,11 @@ flashkit-md [--port <serial-port>] <command> [file]
   read-rom [file]    dump cart ROM (default file: <ROM name>.bin)
       --trust-header dump the size the ROM header declares, not the
                      mirror-probed size (useful on flash carts)
+      --apply-patch <ips>    patch the dump before saving
+      --create-patch <base>  write an IPS diff vs <base> instead of the ROM
   write-rom <file>   erase flash cart and write ROM image
       --full-erase   wipe the whole 4 MB chip first (see notes below)
+      --patch <ips>  apply an IPS patch to the image before flashing
       --no-flash-check   skip the CFI flash-presence check run before
                      erasing (also applies to bake-save)
   read-ram [file]    dump save RAM (default file: <ROM name>.srm)
