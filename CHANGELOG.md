@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.8.1 (July 20, 2026)
 
 BUG FIXES:
 
