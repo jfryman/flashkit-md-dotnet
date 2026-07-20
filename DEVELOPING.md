@@ -49,13 +49,22 @@ interactive front-ends have identical behavior and wording.
     `WriteRom`, `ReadRam`, `WriteRam`, `BakeSave`. Operations are
     synchronous, report progress via an `Action<OperationProgress>`
     callback, throw `VerifyException` on read-back mismatches, and do no
-    console or file I/O.
+    console or file I/O. `GetInfo` returns a `CartInfo` that also
+    identifies the system (Mega Drive/Genesis vs. Sega 32X) and the
+    header region.
+  - `IpsPatch`: IPS patch `Apply`/`Create` operating purely on byte
+    arrays (RLE and the Lunar truncation extension supported); the
+    front-ends wire the file I/O around it.
+  - `RomHash`: CRC32/MD5/SHA-1 of a buffer, rendered as compact
+    uppercase hex — every read/write path reports these so a dump or a
+    flashed image can be checked against a known-good checksum.
 - `src/FlashKit.Presentation/` — shared presentation model for the
   interactive front-ends: `ProgrammerModel` owns device/cart status
   polling, the held serial session (see the FTDI note below), the
   transaction log, and auto-dump/auto-write, exposing
   `INotifyPropertyChanged` state and asking for user decisions through
-  `IUserPrompts`. Operations run on a worker thread internally.
+  `IUserPrompts`. All members must be called on the UI thread; device
+  I/O runs on worker threads internally and marshals results back.
 - `src/flashkit-md/` — the CLI: argument parsing, file I/O, rendering
   over `FlashKitSession` directly.
 - `src/FlashKit.Gui/` — the Avalonia adapter over `ProgrammerModel`:
@@ -78,6 +87,11 @@ interactive front-ends have identical behavior and wording.
 - `DeviceWireFormatTests` hardcode the original client's exact byte
   sequences. Do not "fix" them to match changed code — they lock the wire
   format.
+- `IpsRealAssetTests` validate IPS apply/create against real cart dumps
+  and a real patch when you drop `base.bin`/`patch.ips`/`patched.bin`
+  into `dumps/ips-fixtures/` (or point `FLASHKIT_IPS_FIXTURES` at them).
+  Those files are real ROM content, are never committed (`dumps/` is
+  gitignored), and the tests no-op when absent so CI stays green.
 - Real-hardware validation is a manual checklist; record results in
   [docs/hardware-validation.md](docs/hardware-validation.md). Order
   operations least- to most-destructive (info → read-rom → read-ram →
@@ -97,8 +111,8 @@ is reachable. Keep both behaviors if you touch the serial layer.
 `CHANGELOG.md` follows the mitchellh/HashiCorp style: one
 `## X.Y.Z (Month D, YYYY)` section per release with FEATURES /
 IMPROVEMENTS / BUG FIXES headings and `component:`-prefixed entries
-(cli, gui, core, serial, release). Every user-visible change adds an
-entry under `## Unreleased` in the same commit as the change.
+(cli, gui, tui, core, serial, release, docs). Every user-visible change
+adds an entry under `## Unreleased` in the same commit as the change.
 
 To cut a release: rename `## Unreleased` to the version + date, commit,
 and push a `vX.Y.Z` tag. The release workflow builds and signs all

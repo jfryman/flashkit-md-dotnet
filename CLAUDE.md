@@ -34,8 +34,8 @@ commands use `export PATH="$HOME/.dotnet:$PATH"`.
 
 CHANGELOG.md follows the mitchellh/HashiCorp style: one `## X.Y.Z
 (Month D, YYYY)` section per release with FEATURES / IMPROVEMENTS /
-BUG FIXES headings and `component:`-prefixed entries (cli, gui, core,
-serial, release). Every user-visible change adds an entry under `## Unreleased`
+BUG FIXES headings and `component:`-prefixed entries (cli, gui, tui,
+core, serial, release, docs). Every user-visible change adds an entry under `## Unreleased`
 in the same commit as the change. To cut a release: rename Unreleased to
 the version + date, commit, then tag `vX.Y.Z` — the release workflow
 extracts that section for the GitHub release notes and fails the release
@@ -58,6 +58,12 @@ if the section is missing.
     ReadRam/WriteRam/BakeSave. Synchronous, progress via
     `Action<OperationProgress>` (each phase starts with Done=0),
     `VerifyException` on read-back mismatch, no console/file I/O.
+    GetInfo's CartInfo also carries SystemName (Mega Drive vs Sega 32X)
+    and Region.
+  - `IpsPatch` (Apply/Create) and `RomHash` (Crc32/Md5/Sha1): pure
+    byte-array helpers, original code (not ported, so the verbatim rule
+    above does not apply). Front-ends do the file I/O; every read/write
+    path reports the hashes.
 - `src/FlashKit.Presentation/` — shared presentation model for the
   interactive front-ends (GUI and TUI). `ProgrammerModel` owns ALL interactive
   behavior: held-session lifetime (the macOS tcdrain-wedge fix), the
@@ -97,6 +103,10 @@ if the section is missing.
   format.
 - No sleeps, no timing dependencies, temp files only via the CliTests
   pattern. Keep the whole suite in-memory and fast.
+- `IpsRealAssetTests` no-op unless you drop real dumps into
+  `dumps/ips-fixtures/` (base.bin/patch.ips/patched.bin) or set
+  `FLASHKIT_IPS_FIXTURES`. Those are real ROM content — never committed
+  (they live under gitignored `dumps/`).
 
 ## Hardware testing (manual only)
 
