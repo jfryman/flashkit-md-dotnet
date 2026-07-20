@@ -73,6 +73,12 @@ public sealed class CliApp
                 return 0;
             }
 
+            if (arg is "--help" or "-h")
+            {
+                con.WriteLine(Usage);
+                return 0;
+            }
+
             // Value flags: consume the following argument.
             string? flag = arg is "--port" or "--patch" or "--apply-patch" or "--create-patch" ? arg : null;
             if (flag != null)
@@ -264,6 +270,7 @@ public sealed class CliApp
             OperationPhase.Write => "Flash write...",
             _ => "Flash verify...",
         }));
+        PrintHashes(image);
         con.WriteLine("OK");
     }
 

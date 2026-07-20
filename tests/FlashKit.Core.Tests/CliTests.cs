@@ -47,6 +47,18 @@ public class CliTests : IDisposable
         Assert.Equal("flashkit-md " + VersionInfo.ClientVersion + Environment.NewLine, stdout.ToString());
     }
 
+    [Theory]
+    [InlineData("--help")]
+    [InlineData("-h")]
+    public void help_prints_usage_to_stdout_and_exits_zero(string flag)
+    {
+        int exit = AppWithoutDevice().Run(new[] { flag });
+
+        Assert.Equal(0, exit);
+        Assert.Contains("usage: flashkit-md", stdout.ToString());
+        Assert.Equal("", stderr.ToString());
+    }
+
     [Fact]
     public void info_prints_cart_details()
     {
@@ -139,6 +151,7 @@ public class CliTests : IDisposable
         Assert.Contains("Flash erase...", outText);
         Assert.Contains("Flash write...", outText);
         Assert.Contains("Flash verify...", outText);
+        Assert.Contains("CRC32: " + RomHash.Crc32(data), outText); // flashed image is checksummed
         Assert.Contains("OK", outText);
         Assert.Equal(data, fake.Rom.Take(data.Length).ToArray());
     }

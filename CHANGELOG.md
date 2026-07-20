@@ -4,6 +4,11 @@
 
 IMPROVEMENTS:
 
+ * cli: `write-rom` now prints the flashed image's CRC32/MD5/SHA-1, matching
+   the other read/write commands and the GUI/TUI, so you can confirm what
+   was written against a known-good checksum.
+ * cli: `--help`/`-h` print usage to stdout and exit 0, instead of only
+   showing usage on stderr with an error exit code when no command is given.
  * tui: transaction cards are now only as tall as their status needs — a
    running or failed entry is compact, and a completed dump/write grows to
    fit its CRC32/MD5/SHA-1 lines, instead of every card reserving room for
