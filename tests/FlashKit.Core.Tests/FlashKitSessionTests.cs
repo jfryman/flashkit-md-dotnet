@@ -23,6 +23,31 @@ public class FlashKitSessionTests
         Assert.Equal(8192, info.RamBytes);
         Assert.Equal(0x80000, info.HeaderRomBytes);
         Assert.True(info.CartDetected);
+        Assert.False(info.Is32X);
+        Assert.Equal("Mega Drive / Genesis", info.SystemName);
+    }
+
+    [Theory]
+    [InlineData("SEGA 32X      JU")] // real DOOM cart: region packed into the tail
+    [InlineData("SEGA 32X        ")] // real Kolibri cart: pure spaces
+    public void GetInfo_detects_32X_from_the_system_field(string system)
+    {
+        using var session = Connect(new FakeFlashKitDevice(TestRoms.MakeRom(0x80000, system: system)));
+
+        var info = session.GetInfo();
+
+        Assert.True(info.Is32X);
+        Assert.Equal("Sega 32X", info.SystemName);
+    }
+
+    [Fact]
+    public void SuggestedRomFileName_uses_32x_extension_for_32X_carts()
+    {
+        using var md = Connect(new FakeFlashKitDevice(TestRoms.MakeRom(0x80000, "SONIC")));
+        Assert.Equal("SONIC (U).bin", md.SuggestedRomFileName());
+
+        using var x32 = Connect(new FakeFlashKitDevice(TestRoms.MakeRom(0x80000, "DOOM", system: "SEGA 32X")));
+        Assert.Equal("DOOM (U).32x", x32.SuggestedRomFileName());
     }
 
     [Fact]

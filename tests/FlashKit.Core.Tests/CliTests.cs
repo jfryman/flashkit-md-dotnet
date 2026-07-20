@@ -57,8 +57,37 @@ public class CliTests : IDisposable
         string outText = stdout.ToString();
         Assert.Contains("Connected to: FAKE", outText);
         Assert.Contains("ROM name : TEST GAME (U)", outText);
+        Assert.Contains("System   : Mega Drive / Genesis", outText);
         Assert.Contains("ROM size : 512K", outText);
         Assert.Contains("RAM size : 8K", outText);
+    }
+
+    [Fact]
+    public void info_reports_32X_system()
+    {
+        var fake = new FakeFlashKitDevice(TestRoms.MakeRom(0x80000, "DOOM", system: "SEGA 32X"));
+        int exit = App(fake).Run(new[] { "info" });
+
+        Assert.Equal(0, exit);
+        Assert.Contains("System   : Sega 32X", stdout.ToString());
+    }
+
+    [Fact]
+    public void read_rom_default_filename_uses_32x_extension_for_32X_carts()
+    {
+        // Default (no file arg): the dump lands next to the CWD; run in the
+        // temp dir so we can assert the chosen name without polluting.
+        var fake = new FakeFlashKitDevice(TestRoms.MakeRom(0x80000, "DOOM", system: "SEGA 32X"));
+        string prevCwd = Directory.GetCurrentDirectory();
+        Directory.SetCurrentDirectory(dir);
+        try
+        {
+            int exit = App(fake).Run(new[] { "read-rom" });
+            Assert.Equal(0, exit);
+            Assert.Contains("Read ROM to DOOM (U).32x", stdout.ToString());
+            Assert.True(File.Exists(Path.Combine(dir, "DOOM (U).32x")));
+        }
+        finally { Directory.SetCurrentDirectory(prevCwd); }
     }
 
     [Fact]

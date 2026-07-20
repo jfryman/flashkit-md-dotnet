@@ -63,6 +63,7 @@ public class ProgrammerTuiWindow : Window
     internal readonly Label DeviceStatusLabel = new() { Text = "" };
     internal readonly Label CartStatusLabel = new() { Text = "" };
     internal readonly Label InfoName = new() { Text = "—" };
+    internal readonly Label InfoSystem = new() { Text = "—" };
     internal readonly Label InfoRomSize = new() { Text = "—" };
     internal readonly Label InfoRamSize = new() { Text = "—" };
     internal readonly Label InfoHeaderSize = new() { Text = "—" };
@@ -116,14 +117,15 @@ public class ProgrammerTuiWindow : Window
         Place(AutoWriteFileLabel, 2);
         autoWriteFrame.Add(ChkAutoWrite, BtnWriteFile, AutoWriteFileLabel);
 
-        var infoFrame = new FrameView { Title = "Cartridge", X = LeftWidth, Y = 0, Width = Dim.Fill(), Height = 6 };
+        var infoFrame = new FrameView { Title = "Cartridge", X = LeftWidth, Y = 0, Width = Dim.Fill(), Height = 7 };
         infoFrame.Add(
             Caption("Cartridge", 0), At(InfoName, 0),
-            Caption("ROM size", 1), At(InfoRomSize, 1),
-            Caption("RAM size", 2), At(InfoRamSize, 2),
-            Caption("Header ROM size", 3), At(InfoHeaderSize, 3));
+            Caption("System", 1), At(InfoSystem, 1),
+            Caption("ROM size", 2), At(InfoRomSize, 2),
+            Caption("RAM size", 3), At(InfoRamSize, 3),
+            Caption("Header ROM size", 4), At(InfoHeaderSize, 4));
 
-        var transFrame = new FrameView { Title = "Transactions", X = LeftWidth, Y = 6, Width = Dim.Fill(), Height = Dim.Fill(3) };
+        var transFrame = new FrameView { Title = "Transactions", X = LeftWidth, Y = 7, Width = Dim.Fill(), Height = Dim.Fill(3) };
         CardsHost.VerticalScrollBar.VisibilityMode = ScrollBarVisibilityMode.Auto;
         CardsHost.ViewportChanged += (_, _) => UpdateCardsLayout();
         CardsHost.KeyDown += OnCardsHostKey;
@@ -210,6 +212,7 @@ public class ProgrammerTuiWindow : Window
         IndicatorColors.Tint(CartDot, model.CartPresent ? IndicatorColors.Success : IndicatorColors.Neutral);
         CartStatusLabel.Text = model.CartStatus;
         InfoName.Text = model.CartName;
+        InfoSystem.Text = model.CartSystem;
         InfoRomSize.Text = model.CartRomSize;
         InfoRamSize.Text = model.CartRamSize;
         InfoHeaderSize.Text = model.CartHeaderSize;
@@ -346,7 +349,7 @@ public class ProgrammerTuiWindow : Window
         });
 
     static string Describe(PromptFileKind kind) =>
-        kind == PromptFileKind.RomImage ? "ROM image (.bin)" : "save RAM (.srm)";
+        kind == PromptFileKind.RomImage ? "ROM image (.bin/.32x)" : "save RAM (.srm)";
 
     static string? DialogResult(FileDialog d) =>
         d.Canceled || string.IsNullOrWhiteSpace(d.Path) ? null : d.Path;

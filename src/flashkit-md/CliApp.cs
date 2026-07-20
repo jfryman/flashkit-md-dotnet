@@ -153,6 +153,7 @@ public sealed class CliApp
     {
         var info = session.GetInfo();
         con.WriteLine("ROM name : " + info.RomName);
+        con.WriteLine("System   : " + info.SystemName);
         con.WriteLine("ROM size : " + info.RomBytes / 1024 + "K");
         if (info.HeaderRomBytes is int h && h != info.RomBytes)
             con.WriteLine("Header ROM size : " + h / 1024 + "K (read-rom --trust-header dumps this extent)");
@@ -173,7 +174,7 @@ public sealed class CliApp
 
     void ReadRom(FlashKitSession session, string? file, bool trustHeader)
     {
-        string path = file ?? session.GetRomName() + ".bin";
+        string path = file ?? session.SuggestedRomFileName();
         con.WriteLine("Read ROM to " + path);
         int? size = null;
         if (trustHeader)

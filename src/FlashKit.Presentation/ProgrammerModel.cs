@@ -61,6 +61,7 @@ public sealed class ProgrammerModel : INotifyPropertyChanged, IDisposable
     bool cartPresent;
     string cartStatus = "—";
     string cartName = "—";
+    string cartSystem = "—";
     string cartRomSize = "—";
     string cartRamSize = "—";
     string cartHeaderSize = "—";
@@ -71,6 +72,7 @@ public sealed class ProgrammerModel : INotifyPropertyChanged, IDisposable
     public bool CartPresent { get => cartPresent; private set => Set(ref cartPresent, value); }
     public string CartStatus { get => cartStatus; private set => Set(ref cartStatus, value); }
     public string CartName { get => cartName; private set => Set(ref cartName, value); }
+    public string CartSystem { get => cartSystem; private set => Set(ref cartSystem, value); }
     public string CartRomSize { get => cartRomSize; private set => Set(ref cartRomSize, value); }
     public string CartRamSize { get => cartRamSize; private set => Set(ref cartRamSize, value); }
     public string CartHeaderSize { get => cartHeaderSize; private set => Set(ref cartHeaderSize, value); }
@@ -246,8 +248,9 @@ public sealed class ProgrammerModel : INotifyPropertyChanged, IDisposable
         if (AutoDumpEnabled && autoDumpFolder is string folder)
         {
             string name = DisplayName(info.RomName);
+            string romExt = info.Is32X ? ".32x" : ".bin";
             if (AutoDumpRomOn)
-                await RunOperation("Auto-dump ROM", (s, entry) => DumpRomTo(s, entry, UniquePath(folder, name + ".bin")));
+                await RunOperation("Auto-dump ROM", (s, entry) => DumpRomTo(s, entry, UniquePath(folder, name + romExt)));
             if (AutoDumpRamOn && info.RamBytes > 0)
                 await RunOperation("Auto-dump RAM", (s, entry) => DumpRamTo(s, entry, UniquePath(folder, name + ".srm")));
         }
@@ -299,6 +302,7 @@ public sealed class ProgrammerModel : INotifyPropertyChanged, IDisposable
         CartStatus = present ? "Cartridge inserted"
             : info != null ? "No cartridge" : "—";
         CartName = present ? DisplayName(info!.RomName) : "—";
+        CartSystem = present ? info!.SystemName : "—";
         CartRomSize = present ? FormatKb(info!.RomBytes) : "—";
         CartRamSize = present ? FormatSize(info!.RamBytes) : "—";
         CartHeaderSize = present && info!.HeaderRomBytes is int hdr ? FormatKb(hdr) : "—";
@@ -369,8 +373,8 @@ public sealed class ProgrammerModel : INotifyPropertyChanged, IDisposable
 
     public Task ReadRomAsync() => RunOperation("Read ROM", async (session, entry) =>
     {
-        var romName = await Task.Run(session.GetRomName);
-        if (await prompts.PickSavePath(romName + ".bin", PromptFileKind.RomImage) is not string path)
+        var suggested = await Task.Run(session.SuggestedRomFileName);
+        if (await prompts.PickSavePath(suggested, PromptFileKind.RomImage) is not string path)
         {
             entry.Cancel();
             return;

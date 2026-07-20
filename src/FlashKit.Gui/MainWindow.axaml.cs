@@ -20,7 +20,7 @@ namespace FlashKit.Gui;
 /// </summary>
 public partial class MainWindow : Window
 {
-    static readonly FilePickerFileType RomFiles = new("ROM image") { Patterns = new[] { "*.bin" } };
+    static readonly FilePickerFileType RomFiles = new("ROM image") { Patterns = new[] { "*.bin", "*.32x" } };
     static readonly FilePickerFileType SaveFiles = new("Save RAM") { Patterns = new[] { "*.srm" } };
     static readonly IBrush PresentBrush = Brush.Parse(StatusPalette.Success);
     static readonly IBrush AbsentBrush = Brush.Parse(StatusPalette.Neutral);
@@ -93,6 +93,7 @@ public partial class MainWindow : Window
         CartDot.Fill = model.CartPresent ? PresentBrush : AbsentBrush;
         CartStatusText.Text = model.CartStatus;
         InfoName.Text = model.CartName;
+        InfoSystem.Text = model.CartSystem;
         InfoRomSize.Text = model.CartRomSize;
         InfoRamSize.Text = model.CartRamSize;
         InfoHeaderSize.Text = model.CartHeaderSize;

@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+FEATURES:
+
+ * core, cli, gui, tui: cartridges are now identified as Sega 32X vs
+   Mega Drive/Genesis from the header's 0x100 system field (a 32X cart
+   contains "32X" there — verified on real DOOM and Kolibri carts). The
+   `info` command and both UI cart panels show a System line, and ROM
+   dumps of a 32X cart are named `.32x` instead of `.bin` (direct dumps
+   and auto-dumps alike). Note: the header does not reliably distinguish
+   "Mega Drive" from "Genesis" branding — both strings appear on the
+   same games — so they are reported as one system.
+
 ## 1.6.1 (July 20, 2026)
 
 BUG FIXES:

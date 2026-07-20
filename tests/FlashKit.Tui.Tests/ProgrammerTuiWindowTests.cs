@@ -41,9 +41,18 @@ public class ProgrammerTuiWindowTests : IDisposable
         Assert.Equal("Programmer connected on FAKE", window.DeviceStatusLabel.Text);
         Assert.Equal("Cartridge inserted", window.CartStatusLabel.Text);
         Assert.Equal("TEST GAME (U)", window.InfoName.Text);
+        Assert.Equal("Mega Drive / Genesis", window.InfoSystem.Text);
         Assert.Equal("512K", window.InfoRomSize.Text);
         Assert.Equal("8K", window.InfoRamSize.Text);
         Assert.Equal("512K", window.InfoHeaderSize.Text);
+    }
+
+    [Fact]
+    public async Task info_panel_shows_32X_system()
+    {
+        var window = Window(new FakeFlashKitDevice(TestRoms.MakeRom(0x80000, "DOOM", system: "SEGA 32X")));
+        await window.RefreshAsync();
+        Assert.Equal("Sega 32X", window.InfoSystem.Text);
     }
 
     [Fact]
@@ -247,6 +256,34 @@ public class ProgrammerTuiWindowTests : IDisposable
         Assert.Equal(file, card.DetailLabel.Text);
         Assert.StartsWith("OK — 512K, MD5 ", card.StatusLabel.Text);
         Assert.Equal(1f, card.Progress.Fraction); // own bar, filled on success
+    }
+
+    [Fact]
+    public async Task read_rom_suggests_32x_extension_for_32X_carts()
+    {
+        var window = Window(new FakeFlashKitDevice(TestRoms.MakeRom(0x80000, "DOOM", system: "SEGA 32X")));
+        string? suggested = null;
+        window.PickSavePath = (name, _) => { suggested = name; return Task.FromResult<string?>(TempFile("d.32x")); };
+
+        await window.ReadRomAsync();
+
+        Assert.Equal("DOOM (U).32x", suggested);
+    }
+
+    [Fact]
+    public async Task auto_dump_names_a_32X_rom_with_the_32x_extension()
+    {
+        var fake = new FakeFlashKitDevice(TestRoms.MakeRom(0x80000, "DOOM", system: "SEGA 32X")) { CartInserted = false };
+        var window = Window(fake);
+        window.PickFolder = () => Task.FromResult<string?>(dir);
+        window.ChkAutoRom.Value = CheckState.Checked;
+
+        await window.RefreshAsync();
+        fake.CartInserted = true;
+        await window.RefreshAsync();
+
+        Assert.True(File.Exists(Path.Combine(dir, "DOOM (U).32x")));
+        Assert.False(File.Exists(Path.Combine(dir, "DOOM (U).bin")));
     }
 
     [Fact]

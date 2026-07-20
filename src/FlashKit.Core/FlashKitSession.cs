@@ -32,13 +32,17 @@ public sealed class FlashChipNotFoundException : Exception
 /// <summary><paramref name="HeaderRomBytes"/> is the ROM size the cart's
 /// header declares (end address at 0x1A4 plus one), or null when the header
 /// holds no plausible size — e.g. blank or partially programmed flash.
-/// <paramref name="RomBytes"/> is the mirror-probed size.</summary>
-public sealed record CartInfo(string RomName, int RomBytes, int RamBytes, int? HeaderRomBytes = null)
+/// <paramref name="RomBytes"/> is the mirror-probed size. <paramref name="Is32X"/>
+/// is true when the cart is a Sega 32X title (see <see cref="FlashKitSession"/>).</summary>
+public sealed record CartInfo(string RomName, int RomBytes, int RamBytes, int? HeaderRomBytes = null, bool Is32X = false)
 {
     /// <summary>False when the header was unreadable and mirror probing found
     /// nothing — the "Unknown (X) / 0K" signature an empty or unseated cart
     /// slot produces when the bus floats (see docs/hardware-validation.md).</summary>
     public bool CartDetected => RomBytes != 0 || !RomName.StartsWith("Unknown", StringComparison.Ordinal);
+
+    /// <summary>Human-readable target system for display.</summary>
+    public string SystemName => Is32X ? "Sega 32X" : "Mega Drive / Genesis";
 }
 
 /// <summary>
@@ -86,25 +90,43 @@ public sealed class FlashKitSession : IDisposable
         return string.Join(' ', Cart.getRomName().Split(' ', StringSplitOptions.RemoveEmptyEntries));
     }
 
+    /// <summary>Suggested dump filename: the collapsed ROM name plus the
+    /// system-appropriate extension (.32x for 32X carts, .bin otherwise).</summary>
+    public string SuggestedRomFileName() => GetRomName() + (Is32X() ? ".32x" : ".bin");
+
     public CartInfo GetInfo()
     {
         Device.setDelay(1);
-        return new CartInfo(Cart.getRomName(), Cart.getRomSize(), Cart.getRamSize(), ReadHeaderRomSize());
+        var hdr = ReadHeader();
+        return new CartInfo(Cart.getRomName(), Cart.getRomSize(), Cart.getRamSize(),
+            HeaderRomSize(hdr), IsThirtyTwoX(hdr));
     }
 
     /// <summary>ROM size declared in the cart header, or null when the header
     /// value is implausible. Unlike mirror probing this reports the intended
     /// image extent even on flash carts, where partially programmed flash has
     /// no mirrors to probe.</summary>
-    public int? ReadHeaderRomSize()
+    public int? ReadHeaderRomSize() => HeaderRomSize(ReadHeader());
+
+    /// <summary>True for a Sega 32X cart: the 16-byte system field at 0x100
+    /// contains "32X" ("SEGA 32X …"). Standard carts read "SEGA MEGA DRIVE"
+    /// or "SEGA GENESIS". The 32X hardware is a Genesis add-on, so a 32X cart
+    /// is physically a Mega Drive cartridge and only the header tells them
+    /// apart. Verified on real DOOM and Kolibri carts vs. five MD titles.</summary>
+    public bool Is32X() => IsThirtyTwoX(ReadHeader());
+
+    byte[] ReadHeader()
     {
         Device.setDelay(1);
         var hdr = new byte[512];
         Device.writeWord(0xA13000, 0x0000);
         Device.setAddr(0);
         Device.read(hdr, 0, 512);
-        return HeaderRomSize(hdr);
+        return hdr;
     }
+
+    internal static bool IsThirtyTwoX(byte[] header) =>
+        System.Text.Encoding.ASCII.GetString(header, 0x100, 16).Contains("32X", StringComparison.Ordinal);
 
     internal static int? HeaderRomSize(byte[] header)
     {

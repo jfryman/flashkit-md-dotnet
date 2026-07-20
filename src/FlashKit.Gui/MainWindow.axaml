@@ -117,15 +117,17 @@
       <Border Grid.Row="0"
               BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
               BorderThickness="1" CornerRadius="4" Padding="10,8">
-        <Grid ColumnDefinitions="130,8,*" RowDefinitions="Auto,6,Auto,6,Auto,6,Auto">
+        <Grid ColumnDefinitions="130,8,*" RowDefinitions="Auto,6,Auto,6,Auto,6,Auto,6,Auto">
           <TextBlock Classes="label" Grid.Row="0" Grid.Column="0" Text="Cartridge" />
           <TextBlock x:Name="InfoName" Grid.Row="0" Grid.Column="2" Text="—" FontWeight="SemiBold" />
-          <TextBlock Classes="label" Grid.Row="2" Grid.Column="0" Text="ROM size" />
-          <TextBlock x:Name="InfoRomSize" Grid.Row="2" Grid.Column="2" Text="—" />
-          <TextBlock Classes="label" Grid.Row="4" Grid.Column="0" Text="RAM size" />
-          <TextBlock x:Name="InfoRamSize" Grid.Row="4" Grid.Column="2" Text="—" />
-          <TextBlock Classes="label" Grid.Row="6" Grid.Column="0" Text="Header ROM size" />
-          <TextBlock x:Name="InfoHeaderSize" Grid.Row="6" Grid.Column="2" Text="—" />
+          <TextBlock Classes="label" Grid.Row="2" Grid.Column="0" Text="System" />
+          <TextBlock x:Name="InfoSystem" Grid.Row="2" Grid.Column="2" Text="—" />
+          <TextBlock Classes="label" Grid.Row="4" Grid.Column="0" Text="ROM size" />
+          <TextBlock x:Name="InfoRomSize" Grid.Row="4" Grid.Column="2" Text="—" />
+          <TextBlock Classes="label" Grid.Row="6" Grid.Column="0" Text="RAM size" />
+          <TextBlock x:Name="InfoRamSize" Grid.Row="6" Grid.Column="2" Text="—" />
+          <TextBlock Classes="label" Grid.Row="8" Grid.Column="0" Text="Header ROM size" />
+          <TextBlock x:Name="InfoHeaderSize" Grid.Row="8" Grid.Column="2" Text="—" />
         </Grid>
       </Border>
 
