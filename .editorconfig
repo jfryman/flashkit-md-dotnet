@@ -13,3 +13,23 @@ indent_size = 2
 
 [*.sh]
 end_of_line = lf
+
+# C# conventions this codebase follows. Directory.Build.props turns on
+# EnforceCodeStyleInBuild, so warning-level rules here fail eng/ci.sh
+# (which builds with -warnaserror) instead of drifting.
+[*.cs]
+csharp_style_namespace_declarations = file_scoped:warning
+# Members omit `private`/default modifiers throughout (matches the codebase).
+dotnet_style_require_accessibility_modifiers = omit_if_default:suggestion
+dotnet_sort_system_directives_first = true
+
+# Device.cs and Cart.cs are ported VERBATIM from the original Windows
+# client and kept diffable against it (see CLAUDE.md) — original naming
+# and exception types stay as imported.
+[src/FlashKit.Core/{Device,Cart}.cs]
+dotnet_diagnostic.CA1707.severity = none
+dotnet_diagnostic.CA2201.severity = none
+
+# The flashkit_md namespace deliberately matches the flashkit-md binary.
+[src/flashkit-md/*.cs]
+dotnet_diagnostic.CA1707.severity = none

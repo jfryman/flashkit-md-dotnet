@@ -30,6 +30,19 @@ Both scripts source `eng/ensure-dotnet.sh`, which puts it on PATH and
 auto-installs the global.json-pinned SDK there if missing; for ad-hoc
 commands use `export PATH="$HOME/.dotnet:$PATH"`.
 
+Shared MSBuild settings (including `AnalysisLevel latest-recommended` +
+`EnforceCodeStyleInBuild`) live in `Directory.Build.props`; NuGet
+versions only in `Directory.Packages.props` (central package
+management); the test projects' common xunit stack in
+`tests/Directory.Build.props`. ci.sh builds `-warnaserror`, so a new
+analyzer diagnostic fails CI: fix the code, or suppress narrowly with a
+written justification (scoped `.editorconfig` section or
+`[SuppressMessage]`) — the verbatim-ported `Device.cs`/`Cart.cs`, test
+naming, and `flashkit_md` namespace exemptions are already in place.
+Beware: MSBuild `-warnaserror` still writes outputs, so an immediate
+rebuild can "succeed" incrementally — use `--no-incremental` when
+verifying analyzer fixes.
+
 ## Changelog (permanent repo preference)
 
 CHANGELOG.md follows the mitchellh/HashiCorp style: one `## X.Y.Z

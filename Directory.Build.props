@@ -1,0 +1,19 @@
+<Project>
+
+  <!-- Settings shared by every project in the repo. Per-project files keep
+       only what is distinctive (output type, package refs, front-end
+       flags); package versions live in Directory.Packages.props. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <!-- Code-quality (CA) analyzers at the current recommended set, and
+         .editorconfig style (IDE) rules checked during build, not just in
+         the IDE. eng/ci.sh builds with -warnaserror, so a new diagnostic
+         fails CI rather than accumulating. -->
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+  </PropertyGroup>
+
+</Project>

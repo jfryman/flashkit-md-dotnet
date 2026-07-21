@@ -1,17 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <ItemGroup>
-    <ProjectReference Include="..\FlashKit.Core\FlashKit.Core.csproj" />
-    <ProjectReference Include="..\FlashKit.Presentation\FlashKit.Presentation.csproj" />
-  </ItemGroup>
-
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net10.0</TargetFramework>
     <AssemblyName>flashkit-md-gui</AssemblyName>
     <RootNamespace>FlashKit.Gui</RootNamespace>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
     <ApplicationIcon>Assets\flashkit.ico</ApplicationIcon>
     <!-- Compile XAML bindings (the TransactionEntry DataTemplate already
          declares x:DataType) instead of resolving them by reflection. This
@@ -19,6 +11,11 @@
          and can be silently dropped by the trimmer, blanking the log. -->
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
   </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FlashKit.Core\FlashKit.Core.csproj" />
+    <ProjectReference Include="..\FlashKit.Presentation\FlashKit.Presentation.csproj" />
+  </ItemGroup>
 
   <ItemGroup>
     <AvaloniaResource Include="Assets\**" />
@@ -29,10 +26,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Avalonia" Version="11.3.18" />
-    <PackageReference Include="Avalonia.Desktop" Version="11.3.18" />
-    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.18" />
-    <PackageReference Include="Avalonia.Fonts.Inter" Version="11.3.18" />
+    <PackageReference Include="Avalonia" />
+    <PackageReference Include="Avalonia.Desktop" />
+    <PackageReference Include="Avalonia.Themes.Fluent" />
+    <PackageReference Include="Avalonia.Fonts.Inter" />
   </ItemGroup>
 
 </Project>

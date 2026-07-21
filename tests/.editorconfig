@@ -1,0 +1,10 @@
+# Test-project relaxations; everything else inherits the root .editorconfig.
+[*.cs]
+# Test method names are snake_case sentences by repo convention.
+dotnet_diagnostic.CA1707.severity = none
+# Inline arrays in test bodies read better than shared static fields,
+# and the perf concern behind the rule is irrelevant in tests.
+dotnet_diagnostic.CA1861.severity = none
+# Fixtures implement IDisposable for cleanup only; none have finalizers,
+# so the GC.SuppressFinalize boilerplate would be noise.
+dotnet_diagnostic.CA1816.severity = none

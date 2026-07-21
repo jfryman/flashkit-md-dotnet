@@ -41,6 +41,26 @@ suppressing it. The CLI and TUI trim clean and were verified to run and
 render trimmed; the only check that needs a real display is confirming the
 GUI window and log still render after a trimmed publish.
 
+### Build configuration
+
+Settings shared by every project live in `Directory.Build.props`
+(target framework, nullable, and the analyzers: `AnalysisLevel
+latest-recommended` plus `EnforceCodeStyleInBuild`); the per-project
+`.csproj` files carry only what is distinctive. NuGet versions are
+managed centrally in `Directory.Packages.props` — bump a version there,
+never in a project file. The three test projects additionally share
+their xunit stack via `tests/Directory.Build.props`.
+
+Because `eng/ci.sh` builds with `-warnaserror`, any new analyzer
+diagnostic fails CI. Deliberate exceptions are written down where they
+apply: `.editorconfig` scopes rule relaxations to the verbatim-ported
+`Device.cs`/`Cart.cs` and the `flashkit_md` namespace,
+`tests/.editorconfig` relaxes naming/perf rules that fight test
+conventions, and the few in-code `[SuppressMessage]` attributes carry
+justifications (e.g. MD5/SHA-1 in `RomHash` are ROM database identity
+hashes, not cryptography). Suppress narrowly and say why, or fix the
+code — never blanket-disable a rule.
+
 ## Architecture
 
 The project is library-first: all device workflows live in
