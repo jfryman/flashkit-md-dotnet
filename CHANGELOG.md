@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.9.2 (July 20, 2026)
+
+IMPROVEMENTS:
+
+ * core: code-quality pass. The full .NET analyzer set (latest-recommended,
+   with code style enforced in build) now runs on every build with warnings
+   as errors; a cart without save RAM now raises a dedicated exception type
+   (the error message is unchanged); transaction timestamps format
+   culture-invariantly regardless of system locale.
+ * release: build settings are shared via Directory.Build.props and NuGet
+   versions managed centrally via Directory.Packages.props; the test stack
+   updated to current stable (xunit 2.9.3, runner 3.1.5, Test.Sdk 18.8.1,
+   coverlet.collector 10.0.1). No change to the shipped binaries' behavior.
+
 ## 1.9.1 (July 20, 2026)
 
 IMPROVEMENTS:
