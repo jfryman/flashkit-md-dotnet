@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+BUG FIXES:
+
+ * gui: closing the app on Linux no longer crashes with an unhandled
+   TaskCanceledException. Avalonia's DBus teardown could race dispatcher
+   shutdown (AvaloniaUI/Avalonia#19523); the shared DBus connection is now
+   disposed on the UI thread as soon as the application lifetime returns,
+   before process teardown can race it.
+
 ## 1.9.2 (July 20, 2026)
 
 IMPROVEMENTS:
