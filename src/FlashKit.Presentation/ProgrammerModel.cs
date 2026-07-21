@@ -394,7 +394,12 @@ public sealed class ProgrammerModel : INotifyPropertyChanged, IDisposable
 
     /// <summary>Progress sink that drives the entry's progress bar and sets
     /// its status when the operation enters a new phase. Constructed on the
-    /// UI thread so reports from the worker marshal back automatically.</summary>
+    /// UI thread so reports from the worker marshal back automatically.
+    /// Without a synchronization context (headless tests), Progress&lt;T&gt;
+    /// would instead post every report to the thread pool UNORDERED — a
+    /// late phase label could overwrite the entry's final result (seen as
+    /// flaky CI) — so reports are then delivered inline on the worker,
+    /// completing strictly before the operation returns.</summary>
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance",
         "CA1859:Use concrete types when possible for improved performance",
         Justification = "Progress<T> exposes Report only through IProgress<T>.")]
@@ -402,7 +407,7 @@ public sealed class ProgrammerModel : INotifyPropertyChanged, IDisposable
         Func<OperationPhase, string?>? phaseLabel = null)
     {
         OperationPhase? current = null;
-        return new Progress<OperationProgress>(p =>
+        void Handle(OperationProgress p)
         {
             if (current != p.Phase)
             {
@@ -411,7 +416,17 @@ public sealed class ProgrammerModel : INotifyPropertyChanged, IDisposable
             }
             entry.ProgressMax = Math.Max(1, p.Total);
             entry.ProgressValue = p.Done;
-        });
+        }
+        return SynchronizationContext.Current is null
+            ? new InlineProgress(Handle)
+            : new Progress<OperationProgress>(Handle);
+    }
+
+    sealed class InlineProgress : IProgress<OperationProgress>
+    {
+        readonly Action<OperationProgress> handler;
+        public InlineProgress(Action<OperationProgress> handler) => this.handler = handler;
+        public void Report(OperationProgress value) => handler(value);
     }
 
     public Task ReadRomAsync() => RunOperation("Read ROM", async (session, entry) =>
