@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+IMPROVEMENTS:
+
+ * release: the flatpak now targets the current freedesktop 25.08
+   runtime (was the previous-generation 24.08).
+
 ## 1.10.3 (August 14, 2026)
 
 BUG FIXES:

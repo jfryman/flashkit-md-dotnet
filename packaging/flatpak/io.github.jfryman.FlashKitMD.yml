@@ -14,7 +14,7 @@
 #   flatpak build-bundle repo flashkit-md-x86_64.flatpak io.github.jfryman.FlashKitMD
 app-id: io.github.jfryman.FlashKitMD
 runtime: org.freedesktop.Platform
-runtime-version: '24.08'
+runtime-version: '25.08'
 sdk: org.freedesktop.Sdk
 command: flashkit-md-gui
 finish-args:
