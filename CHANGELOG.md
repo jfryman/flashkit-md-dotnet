@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.10.1 (August 14, 2026)
+
+IMPROVEMENTS:
+
+ * core: System.IO.Hashing updated 10.0.10 -> 10.0.11 (upstream .NET
+   servicing fixes).
+ * serial: System.IO.Ports updated 10.0.10 -> 10.0.11 (upstream .NET
+   servicing fixes).
+
 ## 1.10.0 (August 14, 2026)
 
 FEATURES:
