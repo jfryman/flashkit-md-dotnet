@@ -9,6 +9,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="System.IO.Ports" />
     <InternalsVisibleTo Include="FlashKit.Tui.Tests" />
     <InternalsVisibleTo Include="FlashKit.Gui.Tests" />
   </ItemGroup>
