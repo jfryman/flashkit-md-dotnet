@@ -284,6 +284,26 @@ public class ProgrammerTuiWindowTests : IDisposable
     }
 
     [Fact]
+    public async Task create_patch_writes_an_xdelta_diff_when_named_xdelta()
+    {
+        var cart = TestRoms.MakeRom(0x80000);
+        var window = Window(new FakeFlashKitDevice(cart));
+        var baseRom = (byte[])cart.Clone();
+        baseRom[0x300] ^= 0xFF;
+        string baseFile = TempFile("base.bin");
+        string outPatch = TempFile("out.xdelta");
+        File.WriteAllBytes(baseFile, baseRom);
+
+        window.PickOpenPath = _ => Task.FromResult<string?>(baseFile);
+        window.PickSavePath = (_, _) => Task.FromResult<string?>(outPatch);
+        await window.Model.CreatePatchAsync();
+
+        var card = Assert.Single(window.Cards);
+        Assert.Contains("xdelta patch", card.StatusLabel.Text);
+        Assert.Equal(cart, FlashKit.Core.XdeltaPatch.Apply(baseRom, File.ReadAllBytes(outPatch)));
+    }
+
+    [Fact]
     public async Task cancelling_the_patch_prompt_leaves_apply_off()
     {
         var window = Window(new FakeFlashKitDevice(TestRoms.MakeRom(0x80000)));

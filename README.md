@@ -106,10 +106,12 @@ progress bar and result (size and MD5, or the error).
   Destructive by design, so it asks for confirmation when enabled;
   cartridges without a writable flash chip (retail games) are detected
   and skipped. Auto-dump and auto-write cannot be enabled together.
-- **IPS patch** — tick *Apply patch* and pick a `.ips`, and Read/Write ROM
-  apply it (to the dump before saving, and to the image before flashing).
-  *Create patch* dumps the cart and writes the diff against a base ROM you
-  choose. The same panel exists in the TUI.
+- **Patching** — tick *Apply patch* and pick a `.ips` or `.xdelta`, and
+  Read/Write ROM apply it (to the dump before saving, and to the image
+  before flashing); the format is detected from the file. *Create patch*
+  dumps the cart and writes the diff against a base ROM you choose — name
+  the output `.xdelta` for an xdelta patch, anything else writes IPS. The
+  same panel exists in the TUI.
 
 ## Using the CLI
 
@@ -122,16 +124,20 @@ commands:
       --trust-header dump the size the ROM header declares instead
                      of the mirror-probed size (useful on flash
                      carts, where probing can misjudge the extent)
-      --apply-patch <ips>
-                     apply an IPS patch to the dump before saving
+      --apply-patch <patch>
+                     apply an IPS or xdelta patch to the dump
+                     before saving
       --create-patch <base>
-                     diff the dump against <base> and write an IPS
-                     patch instead of the ROM (default: <name>.ips)
+                     diff the dump against <base> and write a patch
+                     instead of the ROM (default: <name>.ips; an
+                     .xdelta/.vcdiff output name writes xdelta)
   write-rom <file>   erase flash cart and write ROM image
       --full-erase   erase the entire 4 MB chip first, so no stale
                      data above the image shows up as ghost saves
                      (only for carts with a full-size 4 MB chip)
-      --patch <ips>  apply an IPS patch to the image before flashing
+      --patch <patch>
+                     apply an IPS or xdelta patch to the image
+                     before flashing
       --no-flash-check
                      skip the CFI flash-presence check that write-rom
                      and bake-save run before erasing

@@ -62,7 +62,7 @@
       </StackPanel>
     </Border>
 
-    <!-- The action/auto/IPS panels are a natural-height stack in a
+    <!-- The action/auto/patch panels are a natural-height stack in a
          ScrollViewer: on platforms where controls render taller than the
          window can hold, the column scrolls instead of overflowing onto the
          status bar below. -->
@@ -133,7 +133,7 @@
               BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
               BorderThickness="1" CornerRadius="4" Padding="8" VerticalAlignment="Top">
         <StackPanel Spacing="6">
-          <TextBlock Text="IPS patch" FontWeight="SemiBold" />
+          <TextBlock Text="Patch (IPS/xdelta)" FontWeight="SemiBold" />
           <CheckBox x:Name="ChkApplyPatch" Content="Apply on Read/Write ROM" IsCheckedChanged="OnApplyPatchToggled" />
           <Button x:Name="BtnPatchFile" Content="_Patch file..."
                   HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"

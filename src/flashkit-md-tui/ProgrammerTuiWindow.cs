@@ -25,7 +25,7 @@ public class ProgrammerTuiWindow : Window
 {
     const int LeftWidth = 26;
     const int StatusRows = 4;       // border (2) + device/cart line + hint line
-    const int LeftContentRows = 25; // ROM 4 + RAM 4 + Auto-dump 6 + Auto-write 5 + IPS 6
+    const int LeftContentRows = 25; // ROM 4 + RAM 4 + Auto-dump 6 + Auto-write 5 + Patch 6
 
     readonly ProgrammerModel model;
     readonly IApplication? app;
@@ -128,21 +128,21 @@ public class ProgrammerTuiWindow : Window
         Place(AutoWriteFileLabel, 2);
         autoWriteFrame.Add(ChkAutoWrite, BtnWriteFile, AutoWriteFileLabel);
 
-        var ipsFrame = new FrameView { Title = "IPS patch", X = 0, Y = 19, Width = Dim.Fill(), Height = 6 };
+        var patchFrame = new FrameView { Title = "Patch (IPS/xdelta)", X = 0, Y = 19, Width = Dim.Fill(), Height = 6 };
         Place(ChkApplyPatch, 0);
         Place(BtnPatchFile, 1);
         Place(PatchFileLabel, 2);
         Place(BtnCreatePatch, 3);
-        ipsFrame.Add(ChkApplyPatch, BtnPatchFile, PatchFileLabel, BtnCreatePatch);
+        patchFrame.Add(ChkApplyPatch, BtnPatchFile, PatchFileLabel, BtnCreatePatch);
 
-        // The five action/auto/IPS panels (25 rows total) live in a scroll
+        // The five action/auto/patch panels (25 rows total) live in a scroll
         // host confined above the status bar: a short terminal shows a scroll
         // bar and scrolls them into view instead of overflowing onto the
         // status bar. SetContentSize makes the host clip its content to the
         // viewport and scroll (a plain View without it does not scroll).
         var leftHost = new View { X = 0, Y = 0, Width = LeftWidth, Height = Dim.Fill(StatusRows), CanFocus = true };
         leftHost.VerticalScrollBar.VisibilityMode = ScrollBarVisibilityMode.Auto;
-        leftHost.Add(romFrame, ramFrame, autoDumpFrame, autoWriteFrame, ipsFrame);
+        leftHost.Add(romFrame, ramFrame, autoDumpFrame, autoWriteFrame, patchFrame);
         leftHost.SetContentSize(new System.Drawing.Size(LeftWidth, LeftContentRows));
         // When the terminal grows (or during initial layout), pull the scroll
         // back so no content is stranded above the top — otherwise a reveal
@@ -197,7 +197,7 @@ public class ProgrammerTuiWindow : Window
         // Display-only frames opt out of focus entirely, or they'd become
         // empty Tab stops themselves.
         leftHost.TabStop = TabBehavior.TabStop;
-        foreach (var frame in new[] { romFrame, ramFrame, autoDumpFrame, autoWriteFrame, ipsFrame, transFrame })
+        foreach (var frame in new[] { romFrame, ramFrame, autoDumpFrame, autoWriteFrame, patchFrame, transFrame })
             frame.TabStop = TabBehavior.TabStop;
         infoFrame.CanFocus = false;
         statusFrame.CanFocus = false;
@@ -450,7 +450,7 @@ public class ProgrammerTuiWindow : Window
         kind switch
         {
             PromptFileKind.RomImage => "ROM image (.bin/.32x)",
-            PromptFileKind.IpsPatch => "IPS patch (.ips)",
+            PromptFileKind.Patch => "patch (.ips/.xdelta)",
             _ => "save RAM (.srm)",
         };
 

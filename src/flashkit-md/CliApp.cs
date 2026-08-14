@@ -19,16 +19,20 @@ public sealed class CliApp
               --trust-header dump the size the ROM header declares instead
                              of the mirror-probed size (useful on flash
                              carts, where probing can misjudge the extent)
-              --apply-patch <ips>
-                             apply an IPS patch to the dump before saving
+              --apply-patch <patch>
+                             apply an IPS or xdelta patch to the dump
+                             before saving
               --create-patch <base>
-                             diff the dump against <base> and write an IPS
-                             patch instead of the ROM (default: <name>.ips)
+                             diff the dump against <base> and write a patch
+                             instead of the ROM (default: <name>.ips; an
+                             .xdelta/.vcdiff output name writes xdelta)
           write-rom <file>   erase flash cart and write ROM image
               --full-erase   erase the entire 4 MB chip first, so no stale
                              data above the image shows up as ghost saves
                              (only for carts with a full-size 4 MB chip)
-              --patch <ips>  apply an IPS patch to the image before flashing
+              --patch <patch>
+                             apply an IPS or xdelta patch to the image
+                             before flashing
               --no-flash-check
                              skip the CFI flash-presence check that write-rom
                              and bake-save run before erasing
@@ -229,15 +233,17 @@ public sealed class CliApp
 
         if (createPatchBase != null)
         {
-            // Dump the cart and write the diff against the base as an .ips;
-            // the product is the patch, so the raw dump is not saved.
+            // Dump the cart and write the diff against the base as a patch
+            // (format from the output name); the product is the patch, so
+            // the raw dump is not saved.
             string path = file ?? session.GetRomName() + ".ips";
+            var format = RomPatch.FormatForPath(path);
             con.WriteLine("Read ROM and diff against " + createPatchBase);
             byte[] rom = session.ReadRom(RenderProgress(), size);
             byte[] baseRom = File.ReadAllBytes(createPatchBase);
-            byte[] patch = IpsPatch.Create(baseRom, rom);
+            byte[] patch = RomPatch.Create(format, baseRom, rom);
             File.WriteAllBytes(path, patch);
-            con.WriteLine($"Wrote IPS patch {path} ({patch.Length} bytes)");
+            con.WriteLine($"Wrote {RomPatch.DisplayName(format)} patch {path} ({patch.Length} bytes)");
             con.WriteLine("OK");
             return;
         }
@@ -248,8 +254,9 @@ public sealed class CliApp
         con.WriteLine("ROM size : " + dump.Length / 1024 + "K" + (size != null ? " (from header)" : ""));
         if (applyPatchFile != null)
         {
-            dump = IpsPatch.Apply(dump, File.ReadAllBytes(applyPatchFile));
-            con.WriteLine("Applied IPS patch " + applyPatchFile);
+            byte[] patch = File.ReadAllBytes(applyPatchFile);
+            dump = RomPatch.Apply(dump, patch);
+            con.WriteLine($"Applied {RomPatch.DisplayName(RomPatch.Detect(patch))} patch {applyPatchFile}");
         }
         File.WriteAllBytes(outPath, dump);
         PrintHashes(dump);
@@ -261,8 +268,9 @@ public sealed class CliApp
         byte[] image = File.ReadAllBytes(file);
         if (patchFile != null)
         {
-            image = IpsPatch.Apply(image, File.ReadAllBytes(patchFile));
-            con.WriteLine("Applied IPS patch " + patchFile);
+            byte[] patch = File.ReadAllBytes(patchFile);
+            image = RomPatch.Apply(image, patch);
+            con.WriteLine($"Applied {RomPatch.DisplayName(RomPatch.Detect(patch))} patch {patchFile}");
         }
         session.WriteRom(image, fullErase, skipFlashCheck: noFlashCheck, progress: RenderProgress(phase => phase switch
         {

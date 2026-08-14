@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+FEATURES:
+
+ * core: xdelta (VCDIFF/RFC 3284) patches are now supported alongside IPS
+   everywhere patches are accepted. The CLI's `--patch`/`--apply-patch`
+   detect the format from the patch file, `--create-patch` writes xdelta
+   when the output name ends in `.xdelta`/`.vcdiff`/`.xd3`, and the
+   GUI/TUI patch panel picks both formats up the same way. Patches
+   created by xdelta3 with default settings apply as-is (secondary
+   compression, `-S djw/lzma`, is rejected with a pointed error).
+
 IMPROVEMENTS:
 
  * gui: upgraded the UI framework from Avalonia 11.3 to 12.1.

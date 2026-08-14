@@ -73,10 +73,12 @@ if the section is missing.
     `VerifyException` on read-back mismatch, no console/file I/O.
     GetInfo's CartInfo also carries SystemName (Mega Drive vs Sega 32X)
     and Region.
-  - `IpsPatch` (Apply/Create) and `RomHash` (Crc32/Md5/Sha1): pure
-    byte-array helpers, original code (not ported, so the verbatim rule
-    above does not apply). Front-ends do the file I/O; every read/write
-    path reports the hashes.
+  - `IpsPatch` / `XdeltaPatch` (Apply/Create) and `RomHash`
+    (Crc32/Md5/Sha1): pure byte-array helpers, original code (not ported,
+    so the verbatim rule above does not apply). `RomPatch` dispatches
+    between the two patch formats: Apply sniffs the patch magic, Create
+    keys off the output file extension. Front-ends do the file I/O and go
+    through `RomPatch`; every read/write path reports the hashes.
 - `src/FlashKit.Presentation/` — shared presentation model for the
   interactive front-ends (GUI and TUI). `ProgrammerModel` owns ALL interactive
   behavior: held-session lifetime (the macOS tcdrain-wedge fix), the

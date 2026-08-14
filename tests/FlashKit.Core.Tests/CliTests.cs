@@ -214,6 +214,44 @@ public class CliTests : IDisposable
         Assert.Equal(cartRom, IpsPatch.Apply(baseRom, File.ReadAllBytes(outIps)));
     }
 
+    [Fact]
+    public void write_rom_patch_accepts_an_xdelta_patch()
+    {
+        var fake = new FakeFlashKitDevice(new byte[0x400000]) { FlashWritable = true };
+        var baseImg = new byte[0x20000];
+        for (int i = 0; i < baseImg.Length; i++) baseImg[i] = (byte)(i * 7 + 1);
+        var patched = (byte[])baseImg.Clone();
+        patched[0x100] ^= 0xFF;
+        string imgFile = TempFile("base.bin");
+        string patchFile = TempFile("hack.xdelta");
+        File.WriteAllBytes(imgFile, baseImg);
+        File.WriteAllBytes(patchFile, XdeltaPatch.Create(baseImg, patched));
+
+        int exit = App(fake).Run(new[] { "write-rom", imgFile, "--patch", patchFile });
+
+        Assert.Equal(0, exit);
+        Assert.Contains("Applied xdelta patch", stdout.ToString());
+        Assert.Equal(patched, fake.Rom.Take(patched.Length).ToArray());
+    }
+
+    [Fact]
+    public void read_rom_create_patch_writes_xdelta_when_the_output_name_says_so()
+    {
+        var cartRom = TestRoms.MakeRom(0x80000);
+        var fake = new FakeFlashKitDevice(cartRom);
+        var baseRom = (byte[])cartRom.Clone();
+        baseRom[0x200] ^= 0xFF;
+        string baseFile = TempFile("base.bin");
+        string outPatch = TempFile("out.xdelta");
+        File.WriteAllBytes(baseFile, baseRom);
+
+        int exit = App(fake).Run(new[] { "read-rom", outPatch, "--create-patch", baseFile });
+
+        Assert.Equal(0, exit);
+        Assert.Contains("Wrote xdelta patch", stdout.ToString());
+        Assert.Equal(cartRom, XdeltaPatch.Apply(baseRom, File.ReadAllBytes(outPatch)));
+    }
+
     [Theory]
     [InlineData(new[] { "write-rom", "f", "--apply-patch", "p" }, "only apply to read-rom")]
     [InlineData(new[] { "read-rom", "f", "--patch", "p" }, "only applies to write-rom")]

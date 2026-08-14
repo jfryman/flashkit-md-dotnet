@@ -108,7 +108,7 @@ public sealed class ProgrammerModel : INotifyPropertyChanged, IDisposable
     public string AutoDumpFolderDisplay { get => autoDumpFolderDisplay; private set => Set(ref autoDumpFolderDisplay, value); }
     public string AutoWriteFileDisplay { get => autoWriteFileDisplay; private set => Set(ref autoWriteFileDisplay, value); }
 
-    // --- IPS patching --------------------------------------------------
+    // --- Patching (IPS / xdelta) ---------------------------------------
 
     string? patchFile;
     bool applyPatch;
@@ -128,7 +128,7 @@ public sealed class ProgrammerModel : INotifyPropertyChanged, IDisposable
     {
         if (on && patchFile == null)
         {
-            patchFile = await prompts.PickOpenPath(PromptFileKind.IpsPatch);
+            patchFile = await prompts.PickOpenPath(PromptFileKind.Patch);
             PatchFileDisplay = patchFile is string f ? Path.GetFileName(f) : "No patch chosen";
             if (patchFile == null) on = false;
         }
@@ -138,7 +138,7 @@ public sealed class ProgrammerModel : INotifyPropertyChanged, IDisposable
 
     public async Task ChoosePatchFileAsync()
     {
-        if (await prompts.PickOpenPath(PromptFileKind.IpsPatch) is not string file) return;
+        if (await prompts.PickOpenPath(PromptFileKind.Patch) is not string file) return;
         patchFile = file;
         PatchFileDisplay = Path.GetFileName(file);
     }
@@ -466,7 +466,7 @@ public sealed class ProgrammerModel : INotifyPropertyChanged, IDisposable
         entry.Status = "Reading ROM...";
         var progress = TrackProgress(entry);
         var rom = await Task.Run(() => session.ReadRom(p => progress.Report(p)));
-        if (patchPath != null) rom = IpsPatch.Apply(rom, await File.ReadAllBytesAsync(patchPath));
+        if (patchPath != null) rom = RomPatch.Apply(rom, await File.ReadAllBytesAsync(patchPath));
         await File.WriteAllBytesAsync(path, rom);
         entry.Succeed($"OK — {rom.Length / 1024}K{PatchedSuffix(patchPath)}{HashBlock(rom)}");
     }
@@ -485,7 +485,7 @@ public sealed class ProgrammerModel : INotifyPropertyChanged, IDisposable
     {
         entry.Detail = path;
         var rom = await File.ReadAllBytesAsync(path);
-        if (patchPath != null) rom = IpsPatch.Apply(rom, await File.ReadAllBytesAsync(patchPath));
+        if (patchPath != null) rom = RomPatch.Apply(rom, await File.ReadAllBytesAsync(patchPath));
         var progress = TrackProgress(entry, phase => phase switch
         {
             OperationPhase.Erase => "Flash erase...",
@@ -511,19 +511,20 @@ public sealed class ProgrammerModel : INotifyPropertyChanged, IDisposable
         }
         var romName = await Task.Run(session.GetRomName);
         string suggested = romName + ".ips";
-        if (await prompts.PickSavePath(suggested, PromptFileKind.IpsPatch) is not string outPath)
+        if (await prompts.PickSavePath(suggested, PromptFileKind.Patch) is not string outPath)
         {
             entry.Cancel();
             return;
         }
         outPath = FixAppendedExtension(outPath, suggested);
+        var format = RomPatch.FormatForPath(outPath); // .xdelta output name -> xdelta
         entry.Detail = outPath;
         entry.Status = "Reading ROM...";
         var progress = TrackProgress(entry);
         var dump = await Task.Run(() => session.ReadRom(p => progress.Report(p)));
-        var patch = IpsPatch.Create(await File.ReadAllBytesAsync(basePath), dump);
+        var patch = RomPatch.Create(format, await File.ReadAllBytesAsync(basePath), dump);
         await File.WriteAllBytesAsync(outPath, patch);
-        entry.Succeed($"OK — {patch.Length}-byte IPS patch vs {Path.GetFileName(basePath)}");
+        entry.Succeed($"OK — {patch.Length}-byte {RomPatch.DisplayName(format)} patch vs {Path.GetFileName(basePath)}");
     });
 
     public Task ReadRamAsync() => RunOperation("Read RAM", async (session, entry) =>

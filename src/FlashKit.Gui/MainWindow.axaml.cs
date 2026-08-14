@@ -26,7 +26,7 @@ public partial class MainWindow : Window
 {
     static readonly FilePickerFileType RomFiles = new("ROM image") { Patterns = new[] { "*.bin", "*.32x" } };
     static readonly FilePickerFileType SaveFiles = new("Save RAM") { Patterns = new[] { "*.srm" } };
-    static readonly FilePickerFileType IpsFiles = new("IPS patch") { Patterns = new[] { "*.ips" } };
+    static readonly FilePickerFileType PatchFiles = new("Patch (IPS/xdelta)") { Patterns = new[] { "*.ips", "*.xdelta", "*.vcdiff", "*.xd3" } };
     static readonly IBrush PresentBrush = Brush.Parse(StatusPalette.Success);
     static readonly IBrush AbsentBrush = Brush.Parse(StatusPalette.Neutral);
 
@@ -83,7 +83,7 @@ public partial class MainWindow : Window
         static FilePickerFileType Map(PromptFileKind kind) => kind switch
         {
             PromptFileKind.RomImage => RomFiles,
-            PromptFileKind.IpsPatch => IpsFiles,
+            PromptFileKind.Patch => PatchFiles,
             _ => SaveFiles,
         };
 
