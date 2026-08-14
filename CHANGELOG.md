@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+BUG FIXES:
+
+ * release: the flatpak no longer reports a stale version (1.5.4) in
+   software centers like KDE Discover. The AppStream release list was
+   hand-maintained and had rotted; it is now generated from CHANGELOG.md
+   by `eng/gen-flatpak-releases.sh`, which CI runs before every Flatpak
+   build.
+
 ## 1.10.2 (August 14, 2026)
 
 BUG FIXES:

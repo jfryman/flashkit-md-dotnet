@@ -6,6 +6,7 @@
 #
 # Build a bundle:
 #   RIDS=linux-x64 ./eng/publish.sh
+#   ./eng/gen-flatpak-releases.sh   # sync metainfo releases with CHANGELOG.md
 #   mkdir -p artifacts/flatpak-stage
 #   cp artifacts/linux-x64/flashkit-md artifacts/linux-x64/flashkit-md-gui artifacts/flatpak-stage/
 #   flatpak-builder --user --force-clean --repo=repo build-dir \

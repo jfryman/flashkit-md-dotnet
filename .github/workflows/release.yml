@@ -166,6 +166,7 @@ jobs:
           flatpak install --user -y flathub org.freedesktop.Platform//24.08 org.freedesktop.Sdk//24.08
       - name: Build Flatpak bundle
         run: |
+          ./eng/gen-flatpak-releases.sh
           flatpak-builder --user --force-clean --default-branch=stable --repo=flatpak-repo flatpak-build \
             packaging/flatpak/io.github.jfryman.FlashKitMD.yml
           flatpak build-bundle flatpak-repo "flashkit-md-$GITHUB_REF_NAME-${{ matrix.rid }}.flatpak" io.github.jfryman.FlashKitMD stable

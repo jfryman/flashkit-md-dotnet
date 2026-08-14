@@ -163,6 +163,10 @@ happens when they are absent.
 - `packaging/flatpak/` — Flatpak manifest, desktop entry, AppStream
   metainfo, and icon. CI builds the bundle on every push to main; the
   release workflow attaches `flashkit-md-vX.Y.Z-x86_64.flatpak` to the
-  release.
+  release. The metainfo's `<releases>` block is what software centers
+  show as the app version; both workflows regenerate it from
+  CHANGELOG.md via `eng/gen-flatpak-releases.sh` before building, so
+  never edit it by hand (run the script to refresh the checked-in
+  copy).
 - `packaging/99-flashkit-md.rules` — optional udev rule for serial
   access on Linux.
