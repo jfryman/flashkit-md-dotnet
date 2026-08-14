@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.10.4 (August 14, 2026)
 
 IMPROVEMENTS:
 
