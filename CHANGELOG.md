@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+BUG FIXES:
+
+ * release: the flatpak's launcher/search icon no longer looks like the
+   generic "document" icon in KDE. The exported icon was an opaque
+   white-background grayscale conversion; it is now generated from the
+   GUI's own flashkit.ico with a transparent background, installed at
+   32/64/128/256 px.
+
 ## 1.10.1 (August 14, 2026)
 
 IMPROVEMENTS:

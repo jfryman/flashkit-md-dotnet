@@ -39,7 +39,11 @@ modules:
       - install -Dm755 flashkit-md-tui /app/bin/flashkit-md-tui
       - install -Dm644 io.github.jfryman.FlashKitMD.desktop /app/share/applications/io.github.jfryman.FlashKitMD.desktop
       - install -Dm644 io.github.jfryman.FlashKitMD.metainfo.xml /app/share/metainfo/io.github.jfryman.FlashKitMD.metainfo.xml
-      - install -Dm644 io.github.jfryman.FlashKitMD.png /app/share/icons/hicolor/128x128/apps/io.github.jfryman.FlashKitMD.png
+      # RGBA with a transparent background, generated from the GUI's
+      # flashkit.ico (see icons/README.md) — the launcher icon must match
+      # the window icon, and an opaque-background icon reads as the
+      # generic "document" fallback in KDE launchers.
+      - for size in 32x32 64x64 128x128 256x256; do install -Dm644 icons/$size/io.github.jfryman.FlashKitMD.png /app/share/icons/hicolor/$size/apps/io.github.jfryman.FlashKitMD.png; done
     sources:
       - type: file
         path: ../../artifacts/flatpak-stage/flashkit-md
@@ -51,5 +55,6 @@ modules:
         path: io.github.jfryman.FlashKitMD.desktop
       - type: file
         path: io.github.jfryman.FlashKitMD.metainfo.xml
-      - type: file
-        path: io.github.jfryman.FlashKitMD.png
+      - type: dir
+        path: icons
+        dest: icons
