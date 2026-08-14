@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.10.3 (August 14, 2026)
 
 BUG FIXES:
 
