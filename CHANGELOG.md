@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.10.2 (August 14, 2026)
 
 BUG FIXES:
 
