@@ -7,7 +7,8 @@ Everything device-related lives here; front-ends only render. Pure helpers
 classDiagram
   class FlashKitSession {
     +Connect(connector, portName)$
-    +GetInfo() CartInfo
+    +GetInfo(probeFlash) CartInfo
+    +TryIdentifyFlash() FlashId?
     +ReadRom(progress, size)
     +WriteRom(image, fullErase, progress, skipFlashCheck)
     +ReadRam() / WriteRam(ram, progress)
@@ -32,8 +33,11 @@ classDiagram
 - Errors: `VerifyException(Offset)` on read-back mismatch, `SaveRamNotFoundException`,
   `FlashChipNotFoundException` (CFI probe failed: mask ROM or unseated), `DeviceNotFoundException`
   (carries per-port `PortErrors`).
-- `CartInfo(RomName, RomBytes, RamBytes, HeaderRomBytes?, Is32X, Region)`; `CartDetected` is false
-  for the "Unknown / 0K" floating-bus signature; `SystemName` is "Sega 32X" or "Mega Drive / Genesis".
+- `CartInfo(RomName, RomBytes, RamBytes, HeaderRomBytes?, Is32X, Region, HeaderValid, HeaderBlank,
+  Flash?)`; `CartDetected` is false for the "Unknown / 0K" floating-bus signature unless a flash chip
+  answered; `HeaderlessFlashStatus` names blank/unrecognised flash; `SystemName` is "Sega 32X" or
+  "Mega Drive / Genesis". Headerless carts get the read-only flash ID probe
+  ([../cart/flash-identification.md](../cart/flash-identification.md)).
 - `RomPatch` dispatches IPS vs xdelta: Apply sniffs magic, Create keys off output extension
   (`.xdelta`/`.vcdiff` -> xdelta, else IPS). `RomHash` gives CRC32/MD5/SHA-1 as uppercase hex;
   every read/write path reports them.

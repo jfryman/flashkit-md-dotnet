@@ -48,6 +48,43 @@ public class ProgrammerTuiWindowTests : IDisposable
         Assert.Equal("512K", window.InfoHeaderSize.Text);
     }
 
+    static byte[] BlankFlash()
+    {
+        var b = new byte[0x400000];
+        Array.Fill(b, (byte)0xFF);
+        return b;
+    }
+
+    [Fact]
+    public async Task info_panel_shows_a_blank_flash_cart_instead_of_unknown()
+    {
+        var window = Window(new FakeFlashKitDevice(BlankFlash()) { FlashWritable = true });
+
+        await window.RefreshAsync();
+
+        Assert.Equal("●", window.CartDot.Text);
+        Assert.Equal("Cartridge inserted", window.CartStatusLabel.Text);
+        Assert.Equal("Flash cart, blank (reads 0xFF)", window.InfoName.Text);
+        Assert.Equal("—", window.InfoSystem.Text);
+        Assert.Equal("8 MiB flash, Spansion S29GL064N family", window.InfoRomSize.Text);
+    }
+
+    [Fact]
+    public async Task auto_dump_skips_a_blank_flash_cart()
+    {
+        var fake = new FakeFlashKitDevice(BlankFlash()) { FlashWritable = true, CartInserted = false };
+        var window = Window(fake);
+        window.PickFolder = () => Task.FromResult<string?>(dir);
+        window.ChkAutoRom.Value = CheckState.Checked;
+
+        await window.RefreshAsync();
+        fake.CartInserted = true;
+        await window.RefreshAsync();
+
+        Assert.Empty(Directory.GetFiles(dir));
+        Assert.Empty(window.Cards);
+    }
+
     [Fact]
     public async Task info_panel_shows_32X_system()
     {

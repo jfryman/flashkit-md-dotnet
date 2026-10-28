@@ -281,7 +281,9 @@ public sealed class ProgrammerModel : INotifyPropertyChanged, IDisposable
 
     async Task AutoProcessAsync(CartInfo info)
     {
-        if (AutoDumpEnabled && autoDumpFolder is string folder)
+        // A blank or foreign flash cart has no header to dump by; auto-write
+        // still applies (flashing a blank cart is its main use).
+        if (AutoDumpEnabled && autoDumpFolder is string folder && info.HeaderlessFlashStatus == null)
         {
             string name = DisplayName(info.RomName);
             string romExt = info.Is32X ? ".32x" : ".bin";
@@ -337,6 +339,18 @@ public sealed class ProgrammerModel : INotifyPropertyChanged, IDisposable
         CartPresent = present;
         CartStatus = present ? "Cartridge inserted"
             : info != null ? "No cartridge" : "—";
+        if (info?.HeaderlessFlashStatus is string flashStatus)
+        {
+            // No header to show: name the cart state and the chip instead
+            // of "Unknown / 0K" (full ID detail is in `flashkit-md info`).
+            CartName = flashStatus;
+            CartSystem = "—";
+            CartRegion = "—";
+            CartRomSize = info.Flash!.ShortDescription;
+            CartRamSize = FormatSize(info.RamBytes);
+            CartHeaderSize = "—";
+            return;
+        }
         CartName = present ? DisplayName(info!.RomName) : "—";
         CartSystem = present ? info!.SystemName : "—";
         CartRegion = present ? info!.Region : "—";

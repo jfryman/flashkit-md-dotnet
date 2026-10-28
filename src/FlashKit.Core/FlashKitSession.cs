@@ -42,14 +42,32 @@ public sealed class FlashChipNotFoundException : Exception
 /// header declares (end address at 0x1A4 plus one), or null when the header
 /// holds no plausible size — e.g. blank or partially programmed flash.
 /// <paramref name="RomBytes"/> is the mirror-probed size. <paramref name="Is32X"/>
-/// is true when the cart is a Sega 32X title (see <see cref="FlashKitSession"/>).</summary>
+/// is true when the cart is a Sega 32X title (see <see cref="FlashKitSession"/>).
+/// <paramref name="HeaderValid"/> is true when "SEGA" appears in the system
+/// field at 0x100; <paramref name="HeaderBlank"/> when the first 512 bytes all
+/// read 0xFF. <paramref name="Flash"/> is the flash identification, probed
+/// only when the header is invalid (or when asked for).</summary>
 public sealed record CartInfo(string RomName, int RomBytes, int RamBytes, int? HeaderRomBytes = null,
-    bool Is32X = false, string Region = "Unknown")
+    bool Is32X = false, string Region = "Unknown", bool HeaderValid = true, bool HeaderBlank = false,
+    FlashId? Flash = null)
 {
-    /// <summary>False when the header was unreadable and mirror probing found
-    /// nothing — the "Unknown (X) / 0K" signature an empty or unseated cart
-    /// slot produces when the bus floats (see docs/hardware-validation.md).</summary>
-    public bool CartDetected => RomBytes != 0 || !RomName.StartsWith("Unknown", StringComparison.Ordinal);
+    /// <summary>Shown instead of cart details when nothing answered: no
+    /// valid header and no flash chip.</summary>
+    public const string NoCartMessage = "No cart detected (or non-flash cart with no valid header)";
+
+    /// <summary>False when the header was unreadable, mirror probing found
+    /// nothing and no flash chip answered — the "Unknown (X) / 0K" signature
+    /// an empty or unseated cart slot produces when the bus floats (see
+    /// docs/hardware-validation.md). A blank flash cart reads the same 0xFF
+    /// but answers the flash probe, so it counts as detected.</summary>
+    public bool CartDetected =>
+        Flash != null || RomBytes != 0 || !RomName.StartsWith("Unknown", StringComparison.Ordinal);
+
+    /// <summary>"Flash cart, blank (reads 0xFF)" or "Flash cart, unrecognised
+    /// header" when a flash chip answered but the header is invalid; null
+    /// otherwise (the normal header-driven details apply).</summary>
+    public string? HeaderlessFlashStatus => Flash == null || HeaderValid ? null
+        : HeaderBlank ? "Flash cart, blank (reads 0xFF)" : "Flash cart, unrecognised header";
 
     /// <summary>Human-readable target system for display.</summary>
     public string SystemName => Is32X ? "Sega 32X" : "Mega Drive / Genesis";
@@ -104,13 +122,27 @@ public sealed class FlashKitSession : IDisposable
     /// system-appropriate extension (.32x for 32X carts, .bin otherwise).</summary>
     public string SuggestedRomFileName() => GetRomName() + (Is32X() ? ".32x" : ".bin");
 
-    public CartInfo GetInfo()
+    /// <summary>Reads the cart header and sizes. When the header has no
+    /// "SEGA" signature (blank or foreign flash, empty slot) it also runs the
+    /// read-only <see cref="TryIdentifyFlash"/> probe, so a blank flash cart
+    /// is told apart from an empty slot. A valid header skips the probe:
+    /// mask-ROM and mapper carts are never sent flash commands unless
+    /// <paramref name="probeFlash"/> forces it.</summary>
+    public CartInfo GetInfo(bool probeFlash = false)
     {
         Device.setDelay(1);
         var hdr = ReadHeader();
-        return new CartInfo(Cart.getRomName(), Cart.getRomSize(), Cart.getRamSize(),
-            HeaderRomSize(hdr), IsThirtyTwoX(hdr), RegionName(hdr));
+        var info = new CartInfo(Cart.getRomName(), Cart.getRomSize(), Cart.getRamSize(),
+            HeaderRomSize(hdr), IsThirtyTwoX(hdr), RegionName(hdr),
+            HeaderValid: HasSegaSignature(hdr), HeaderBlank: Array.TrueForAll(hdr, b => b == 0xFF));
+        return info.HeaderValid && !probeFlash ? info : info with { Flash = TryIdentifyFlash() };
     }
+
+    /// <summary>Standard headers start the 0x100 system field with "SEGA"
+    /// ("SEGA MEGA DRIVE", "SEGA GENESIS", "SEGA 32X"); some pad it with a
+    /// leading space, so search the whole field.</summary>
+    internal static bool HasSegaSignature(byte[] header) =>
+        System.Text.Encoding.ASCII.GetString(header, 0x100, 16).Contains("SEGA", StringComparison.Ordinal);
 
     /// <summary>Friendly region from the header's 0x1F0 field. Mirrors the
     /// letter codes Cart.getRomRegion appends to the ROM name (W/U/J/E/X):
@@ -191,18 +223,71 @@ public sealed class FlashKitSession : IDisposable
     static readonly byte[] CfiQry = { 0x00, 0x51, 0x00, 0x52, 0x00, 0x59 };
 
     /// <summary>Verifies a CFI-capable flash chip answers on the cart bus
-    /// (query mode via 0x98, 'QRY' at word address 0x10) before destructive
-    /// writes — fails fast instead of "erasing" a mask ROM cart and finding
-    /// out at verify time. Not part of the original client; the check is the
-    /// standard CFI probe, as flashkit-md-py does it.</summary>
+    /// before destructive writes — fails fast instead of "erasing" a mask ROM
+    /// cart and finding out at verify time. Not part of the original client;
+    /// the check is the standard CFI probe, as flashkit-md-py does it.</summary>
     public void CheckFlash()
     {
-        Device.writeByte(0x55 * 2, 0x98);
         var cfi = new byte[6];
-        Device.setAddr(0x20);
-        Device.read(cfi, 0, 6);
-        Device.writeByte(0, 0xf0);
-        if (!cfi.AsSpan().SequenceEqual(CfiQry)) throw new FlashChipNotFoundException(cfi);
+        if (ProbeFlash(cfi)?.CfiOk != true) throw new FlashChipNotFoundException(cfi);
+    }
+
+    /// <summary>
+    /// Read-only flash identification: CFI query (0x98, "QRY" at word 0x10,
+    /// device size 2^n at word 0x27) and AMD/Spansion autoselect (AA/55/90;
+    /// manufacturer at word 0, device ID at words 1/0x0E/0x0F). Sends only
+    /// query, autoselect and reset (0xF0) commands — never erase or program —
+    /// and always returns the chip to read-array mode. Returns null when no
+    /// flash chip answered (empty slot, mask ROM).
+    /// </summary>
+    public FlashId? TryIdentifyFlash() => ProbeFlash(new byte[6]);
+
+    FlashId? ProbeFlash(byte[] cfi)
+    {
+        // Baseline read-array contents at the autoselect ID addresses: a
+        // chip that ignores autoselect (mask ROM, floating bus) reads the
+        // same before and after, so differences mean a real ID.
+        var array = new byte[0x20];
+        var ids = new byte[0x20];
+        var size = new byte[2];
+        Device.setAddr(0);
+        Device.read(array, 0, array.Length);
+        bool cfiOk;
+        try
+        {
+            Device.writeByte(0x55 * 2, 0x98);
+            Device.setAddr(0x20);
+            Device.read(cfi, 0, 6);
+            cfiOk = cfi.AsSpan().SequenceEqual(CfiQry);
+            if (cfiOk)
+            {
+                Device.setAddr(0x4E); // CFI word 0x27: device size, low byte
+                Device.read(size, 0, 2);
+            }
+            Device.writeWord(0, 0xF0);
+
+            Device.writeWord(0x555 * 2, 0xAA);
+            Device.writeWord(0x2AA * 2, 0x55);
+            Device.writeWord(0x555 * 2, 0x90);
+            Device.setAddr(0);
+            Device.read(ids, 0, ids.Length);
+            Device.writeWord(0, 0xF0);
+        }
+        catch (Exception)
+        {
+            try { Device.writeWord(0, 0xF0); }
+            catch (Exception) { }
+            throw;
+        }
+
+        static ushort Word(byte[] b, int byteAddr) => (ushort)((b[byteAddr] << 8) | b[byteAddr + 1]);
+        int[] idAddrs = { 0x00, 0x02, 0x1C, 0x1E };
+        bool idOk = Array.Exists(idAddrs, a => Word(ids, a) != Word(array, a));
+        if (!cfiOk && !idOk) return null;
+        int sizeBytes = cfiOk && size[1] is >= 10 and <= 30 ? 1 << size[1] : 0;
+        return new FlashId(cfiOk, sizeBytes,
+            idOk ? Word(ids, 0x00) : (ushort)0,
+            idOk ? new[] { Word(ids, 0x02), Word(ids, 0x1C), Word(ids, 0x1E) } : Array.Empty<ushort>());
     }
 
     /// <summary>

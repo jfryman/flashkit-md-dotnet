@@ -76,6 +76,75 @@ public class CliTests : IDisposable
     }
 
     [Fact]
+    public void info_reports_a_blank_flash_cart_instead_of_unknown()
+    {
+        var blank = new byte[0x400000];
+        Array.Fill(blank, (byte)0xFF);
+        var fake = new FakeFlashKitDevice(blank) { FlashWritable = true };
+        int exit = App(fake).Run(new[] { "info" });
+
+        Assert.Equal(0, exit);
+        string outText = stdout.ToString();
+        Assert.Contains("Cart     : Flash cart, blank (reads 0xFF)", outText);
+        Assert.Contains("Flash    : CFI OK, 8 MiB, mfr 0x0001 dev 227E/2210/2200 (Spansion S29GL064N family)", outText);
+        Assert.DoesNotContain("Unknown", outText);
+        Assert.DoesNotContain("ROM size", outText);
+    }
+
+    [Fact]
+    public void info_reports_an_empty_slot_as_no_cart()
+    {
+        var fake = new FakeFlashKitDevice(TestRoms.MakeRom(0x80000)) { CartInserted = false };
+        int exit = App(fake).Run(new[] { "info" });
+
+        Assert.Equal(0, exit);
+        string outText = stdout.ToString();
+        Assert.Contains("Cart     : No cart detected (or non-flash cart with no valid header)", outText);
+        Assert.DoesNotContain("ROM name", outText);
+    }
+
+    [Fact]
+    public void info_does_not_probe_a_cart_with_a_valid_header()
+    {
+        var fake = new FakeFlashKitDevice(TestRoms.MakeRom(0x80000)) { FlashWritable = true };
+        int exit = App(fake).Run(new[] { "info" });
+
+        Assert.Equal(0, exit);
+        Assert.Equal(0, fake.FlashQueryCount);
+        Assert.DoesNotContain("Flash    :", stdout.ToString());
+    }
+
+    [Fact]
+    public void info_flash_id_forces_the_probe()
+    {
+        var fake = new FakeFlashKitDevice(TestRoms.MakeRom(0x80000)) { FlashWritable = true };
+        int exit = App(fake).Run(new[] { "info", "--flash-id" });
+
+        Assert.Equal(0, exit);
+        Assert.Contains("ROM name : TEST GAME (U)", stdout.ToString());
+        Assert.Contains("Flash    : CFI OK, 8 MiB", stdout.ToString());
+    }
+
+    [Fact]
+    public void info_flash_id_on_mask_rom_says_no_flash()
+    {
+        var fake = new FakeFlashKitDevice(TestRoms.MakeRom(0x80000));
+        int exit = App(fake).Run(new[] { "info", "--flash-id" });
+
+        Assert.Equal(0, exit);
+        Assert.Contains("Flash    : no flash chip answered", stdout.ToString());
+    }
+
+    [Fact]
+    public void flash_id_is_rejected_outside_info()
+    {
+        int exit = AppWithoutDevice().Run(new[] { "read-rom", "--flash-id" });
+
+        Assert.Equal(2, exit);
+        Assert.Contains("--flash-id only applies to info", stderr.ToString());
+    }
+
+    [Fact]
     public void info_reports_32X_system()
     {
         var fake = new FakeFlashKitDevice(TestRoms.MakeRom(0x80000, "DOOM", system: "SEGA 32X"));

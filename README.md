@@ -119,7 +119,10 @@ progress bar and result (size and MD5, or the error).
 usage: flashkit-md [--port <serial-port>] <command> [file]
        flashkit-md --version
 commands:
-  info               print cart ROM name/size and save-RAM size
+  info               print cart ROM name/size and save-RAM size; a
+                     cart with no valid header gets a read-only
+                     flash ID probe (blank flash vs empty slot)
+      --flash-id     always run the flash ID probe
   read-rom [file]    dump cart ROM (default file: <ROM name>.bin)
       --trust-header dump the size the ROM header declares instead
                      of the mirror-probed size (useful on flash
@@ -155,6 +158,24 @@ The programmer is auto-detected by probing likely USB serial ports
 CDC-ACM ports (`/dev/ttyACM*`, `/dev/cu.usbmodem*`: ESP32 boards, Arduinos and
 the like) are never probed, since opening them can reset the board. Use
 `--port` to pin a specific port.
+
+`info` on a cart with a valid header prints its name, system, region and
+sizes. A blank (erased) flash cart reads 0xFF everywhere, just like an empty
+slot, so when the header is missing `info` asks the flash chip to identify
+itself (CFI query and autoselect ID — read-only, nothing is erased or
+written) and reports what answered:
+
+```
+Cart     : Flash cart, blank (reads 0xFF)
+Flash    : CFI OK, 8 MiB, mfr 0x0001 dev 227E/2210/2200 (Spansion S29GL064N family)
+```
+
+A flash cart holding data without a valid header shows `Flash cart,
+unrecognised header` instead. If nothing answers, `info` prints `No cart
+detected (or non-flash cart with no valid header)` — usually an unseated
+cart. Carts with a valid header are never sent flash commands unless you
+pass `--flash-id`. The GUI and TUI show the same result in the cartridge
+panel, and auto-write treats a blank flash cart as an inserted cart.
 
 Dumps print an MD5 you can compare against the original Windows client's
 output; `write-rom` and `write-ram` verify by reading back.

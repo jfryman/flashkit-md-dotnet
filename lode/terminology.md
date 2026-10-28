@@ -12,6 +12,11 @@
 - Full erase - wipe the whole 4 MB chip (`--full-erase`); unsafe on smaller mirrored chips
 - Ghost saves - stale flash above a written image that games read as save data
 - CFI / QRY - Common Flash Interface query (0x98) answered with "QRY"; `CheckFlash` uses it before destructive ops
+- Autoselect - AMD/Spansion ID mode (AA/55/90): manufacturer + 3 device ID words; exited with 0xF0
+- Flash ID probe - read-only CFI + autoselect (`TryIdentifyFlash`), run by `info` when the header is invalid
+- Blank flash cart - erased flash: reads 0xFF like an empty slot, but answers the flash ID probe
+- Valid header - "SEGA" in the 16-byte system field at 0x100; such carts are never flash-probed by default
+- MegaWiFi - ESP32-based flash cart (Rev.C: Spansion S29GL064N, 8 MiB) James is building
 - 32X - Sega 32X title; detected by "32X" in the system field at 0x100; dumps use `.32x`
 - Region - header field at 0x1F0 (W/U/J/E/X letter codes)
 - Verbatim port - `Device.cs`/`Cart.cs`, kept diffable against the original C# client

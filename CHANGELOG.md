@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+IMPROVEMENTS:
+
+ * core: a cart with no valid header now gets a read-only flash
+   identification (CFI query + AMD/Spansion autoselect ID), so a blank
+   flash cart is reported as `Flash cart, blank (reads 0xFF)` with its
+   chip size and ID instead of the empty-slot `Unknown (X) / 0K`. Carts
+   with a valid header are never probed.
+ * cli: `info` prints `Cart`/`Flash` lines for blank or unrecognised flash
+   carts and `No cart detected (or non-flash cart with no valid header)`
+   for an empty slot; the new `--flash-id` flag forces the probe.
+ * gui, tui: the cartridge panel names a blank flash cart and its chip,
+   and auto-write fires when one is inserted; auto-dump skips it.
+
 ## 1.10.5 (October 27, 2026)
 
 IMPROVEMENTS:
