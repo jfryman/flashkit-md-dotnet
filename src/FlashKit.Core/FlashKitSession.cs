@@ -235,7 +235,8 @@ public sealed class FlashKitSession : IDisposable
     /// <summary>
     /// Read-only flash identification: CFI query (0x98, "QRY" at word 0x10,
     /// device size 2^n at word 0x27) and AMD/Spansion autoselect (AA/55/90;
-    /// manufacturer at word 0, device ID at words 1/0x0E/0x0F). Sends only
+    /// manufacturer at word 0, device ID at words 1/0x0E/0x0F; 8-bit chip
+    /// pairs answer on the low byte only). Sends only
     /// query, autoselect and reset (0xF0) commands — never erase or program —
     /// and always returns the chip to read-array mode. Returns null when no
     /// flash chip answered (empty slot, mask ROM).
@@ -280,15 +281,27 @@ public sealed class FlashKitSession : IDisposable
             throw;
         }
 
-        static ushort Word(byte[] b, int byteAddr) => (ushort)((b[byteAddr] << 8) | b[byteAddr + 1]);
         int[] idAddrs = { 0x00, 0x02, 0x1C, 0x1E };
         bool idOk = Array.Exists(idAddrs, a => Word(ids, a) != Word(array, a));
         if (!cfiOk && !idOk) return null;
         int sizeBytes = cfiOk && size[1] is >= 10 and <= 30 ? 1 << size[1] : 0;
-        return new FlashId(cfiOk, sizeBytes,
-            idOk ? Word(ids, 0x00) : (ushort)0,
-            idOk ? new[] { Word(ids, 0x02), Word(ids, 0x1C), Word(ids, 0x1E) } : Array.Empty<ushort>());
+        if (!idOk) return new FlashId(cfiOk, sizeBytes, 0, Array.Empty<ushort>());
+
+        // Repro carts often pair two 8-bit chips (high and low data byte).
+        // The commands go out as words with a 0x00 high byte, so only the
+        // low-byte chip enters autoselect: its ID is in the low bytes while
+        // the high bytes still read array data.
+        bool byteWide = Array.TrueForAll(idAddrs, a => ids[a] == array[a]);
+        ushort Id(int byteAddr) => byteWide ? ids[byteAddr + 1] : Word(ids, byteAddr);
+        // Device ID words 2/3 are meaningful only for the AMD extended-ID
+        // scheme (word 1 low byte 0x7E); otherwise they hold unrelated
+        // autoselect data such as sector protection.
+        ushort dev1 = Id(0x02);
+        ushort[] devices = (dev1 & 0xFF) == 0x7E ? new[] { dev1, Id(0x1C), Id(0x1E) } : new[] { dev1 };
+        return new FlashId(cfiOk, sizeBytes, Id(0x00), devices, byteWide);
     }
+
+    static ushort Word(byte[] b, int byteAddr) => (ushort)((b[byteAddr] << 8) | b[byteAddr + 1]);
 
     /// <summary>
     /// Erases, programs, and verifies a ROM image (padded to 64 KB, capped

@@ -41,6 +41,13 @@ sealed class FakeFlashKitDevice : ISerialPort
     public ushort[] FlashDeviceIds { get; init; } = { 0x227E, 0x2210, 0x2200 };
     public byte CfiSizeExponent { get; init; } = 0x17;
 
+    /// <summary>Models a repro cart's pair of 8-bit non-CFI chips (e.g. two
+    /// MX29F040): commands are sent as words with a 0x00 high byte, so only
+    /// the low-byte chip enters autoselect. It answers in the low byte,
+    /// repeating every 4 words (A0/A1 decode), while the high byte keeps
+    /// reading array data; CFI is ignored. ID properties hold byte values.</summary>
+    public bool ByteWidePair { get; init; }
+
     /// <summary>CFI query and autoselect commands received — lets tests
     /// assert a cart was never probed.</summary>
     public int FlashQueryCount { get; private set; }
@@ -254,6 +261,11 @@ sealed class FakeFlashKitDevice : ISerialPort
         if (!CartInserted) return 0xFFFF;
         int byteAddr = wordAddr * 2;
         if (cfiMode) return wordAddr switch { 0x10 => 0x0051, 0x11 => 0x0052, 0x12 => 0x0059, 0x27 => CfiSizeExponent, _ => (ushort)0 };
+        if (autoselectMode && ByteWidePair)
+        {
+            int id = (wordAddr & 3) switch { 0 => FlashManufacturer, 1 => FlashDeviceIds[0], _ => 0 };
+            return (ushort)((rom[byteAddr % rom.Length] << 8) | (byte)id);
+        }
         if (autoselectMode) return wordAddr switch
         {
             0x00 => FlashManufacturer,
@@ -335,7 +347,7 @@ sealed class FakeFlashKitDevice : ISerialPort
         {
             // CFI query mode; a mask ROM cart (FlashWritable=false) ignores it
             FlashQueryCount++;
-            cfiMode = FlashWritable;
+            cfiMode = FlashWritable && !ByteWidePair;
             return;
         }
         if (eraseArmed && v == 0x30)

@@ -30,6 +30,17 @@ The ID counts only if some ID word differs from the baseline: a mask ROM or floa
 autoselect and reads the same data, so this rejects ROM bytes masquerading as an ID while still
 identifying non-CFI chips. Result is null when neither CFI nor the ID answered.
 
+ID decoding:
+- **8-bit pair** (`ByteWide`): if every high byte at the ID addresses equals the baseline and only low
+  bytes changed, the cart is two x8 chips and only the low-byte chip saw the commands (they go out as
+  words with high byte 0x00). IDs are then the low bytes (`mfr 0xC2 dev A4`). Typical of repro carts;
+  such chips usually lack CFI, so `CheckFlash` refuses them — correct, since word-wide program
+  commands could never reach the high-byte chip.
+- **Device words 2/3** are kept only for the AMD extended-ID scheme (word 1 low byte 0x7E, e.g.
+  S29GL `227E/2210/2200`). Otherwise they are other autoselect data (protection status) and only
+  word 1 is reported (ST repro: `2256`, not `2256/0000/0001`).
+- Chip table key: `"0001:227E/2210/2200"` (16-bit) or `"C2:A4"` (8-bit pair).
+
 ```csharp
 public sealed record FlashId(bool CfiOk, int SizeBytes, ushort Manufacturer, IReadOnlyList<ushort> DeviceId);
 FlashId? id = session.TryIdentifyFlash();
@@ -49,8 +60,8 @@ id?.ShortDescription;    // "8 MiB flash, Spansion S29GL064N family" (GUI/TUI RO
 - `CartInfo.CartDetected` is true when `Flash != null`; `HeaderlessFlashStatus` is the status line
   for flash with no valid header (null otherwise). `CartInfo.NoCartMessage` is the nothing-answered
   text. CLI exit code for `info` is 0 in every case.
-- Chip table (`FlashId.Chips`) is keyed on mfr + all three device words; add only from datasheets or
-  real reads. Unknown IDs fall back to a JEDEC manufacturer name, then raw hex.
+- Chip table (`FlashId.Chips`): add only from datasheets or real reads. Unknown IDs fall back to a
+  JEDEC manufacturer name, then raw hex.
 
 ## Front-end rendering
 
@@ -62,8 +73,14 @@ id?.ShortDescription;    // "8 MiB flash, Spansion S29GL064N family" (GUI/TUI RO
 
 ## Lessons
 
+- A cart that looks like a mask ROM may be a repro on flash: two "Sonic 2" carts with identical
+  headers and data differed only in their autoselect answer. Test the negative path on a cart known
+  to be genuine.
+- Repro carts with bank-switching mappers may latch writes to ROM space, so a forced probe
+  (`--flash-id`) could switch banks until power-cycle. Valid-header carts are never probed by default.
 - Hit on a factory-blank MegaWiFi Rev.C (S29GL064N, 8 MiB): `info` looked dead while `write-rom`
-  worked. Reference reads are in `docs/hardware-validation.md` (2026-10-28).
+  worked. Reference reads (MegaWiFi, ST repro, MX29F040-pair repro, genuine Sonic 2) are in
+  `docs/hardware-validation.md` (2026-10-28) and replayed by `FlashIdentifyTests`.
 - `write-rom` still caps images at 4 MB; 8 MiB support is a separate task
   ([../plans/backlog.md](../plans/backlog.md)).
 

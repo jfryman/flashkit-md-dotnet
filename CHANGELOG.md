@@ -8,7 +8,8 @@ IMPROVEMENTS:
    identification (CFI query + AMD/Spansion autoselect ID), so a blank
    flash cart is reported as `Flash cart, blank (reads 0xFF)` with its
    chip size and ID instead of the empty-slot `Unknown (X) / 0K`. Carts
-   with a valid header are never probed.
+   with a valid header are never probed. Repro carts built from two 8-bit
+   chips (e.g. Macronix MX29F040) are recognised as an `8-bit pair`.
  * cli: `info` prints `Cart`/`Flash` lines for blank or unrecognised flash
    carts and `No cart detected (or non-flash cart with no valid header)`
    for an empty slot; the new `--flash-id` flag forces the probe.

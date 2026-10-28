@@ -105,14 +105,87 @@ public class FlashIdentifyTests
     [Fact]
     public void Describe_falls_back_to_raw_hex_for_unknown_chips()
     {
-        var known = new FlashId(true, 0x400000, 0x00C2, new ushort[] { 0x22C9, 0x0000, 0x0000 });
-        var unknown = new FlashId(true, 0x400000, 0x1234, new ushort[] { 0xABCD, 0x0001, 0x0002 });
+        var known = new FlashId(true, 0x400000, 0x00C2, new ushort[] { 0x22C9 });
+        var unknown = new FlashId(true, 0x400000, 0x1234, new ushort[] { 0xAB7E, 0x0001, 0x0002 });
         var noId = new FlashId(true, 0, 0, Array.Empty<ushort>());
 
-        Assert.Equal("CFI OK, 4 MiB, mfr 0x00C2 dev 22C9/0000/0000 (Macronix)", known.Describe());
-        Assert.Equal("CFI OK, 4 MiB, mfr 0x1234 dev ABCD/0001/0002", unknown.Describe());
+        Assert.Equal("CFI OK, 4 MiB, mfr 0x00C2 dev 22C9 (Macronix)", known.Describe());
+        Assert.Equal("CFI OK, 4 MiB, mfr 0x1234 dev AB7E/0001/0002", unknown.Describe());
         Assert.Equal("CFI OK, no autoselect ID", noId.Describe());
         Assert.Equal("4 MiB flash", unknown.ShortDescription);
+    }
+
+    [Fact]
+    public void probe_reports_only_the_first_device_word_without_the_extended_ID_scheme()
+    {
+        // Real reads from an ST/Micron repro cart (2026-10-28): words 2/3
+        // are other autoselect data, not part of the device ID.
+        var fake = new FakeFlashKitDevice(TestRoms.MakeRom(0x80000))
+        {
+            FlashWritable = true, CfiSizeExponent = 0x16,
+            FlashManufacturer = 0x0020, FlashDeviceIds = new ushort[] { 0x2256, 0x0000, 0x0001 },
+        };
+        using var session = Connect(fake);
+
+        var flash = session.TryIdentifyFlash();
+
+        Assert.Equal(new ushort[] { 0x2256 }, flash?.DeviceId);
+        Assert.Equal("CFI OK, 4 MiB, mfr 0x0020 dev 2256 (ST/Micron)", flash?.Describe());
+    }
+
+    static FakeFlashKitDevice BytePairRepro(byte[] rom) => new(rom)
+    {
+        FlashWritable = true, ByteWidePair = true,
+        FlashManufacturer = 0xC2, FlashDeviceIds = new ushort[] { 0xA4 },
+    };
+
+    [Fact]
+    public void GetInfo_identifies_a_blank_8_bit_pair_repro_cart()
+    {
+        using var session = Connect(BytePairRepro(Blank(0x100000)));
+
+        var info = session.GetInfo();
+
+        Assert.Equal("Flash cart, blank (reads 0xFF)", info.HeaderlessFlashStatus);
+        var flash = Assert.IsType<FlashId>(info.Flash);
+        Assert.True(flash.ByteWide);
+        Assert.False(flash.CfiOk);
+        Assert.Equal("no CFI, 8-bit pair, mfr 0xC2 dev A4 (Macronix MX29F040)", flash.Describe());
+        Assert.Equal("flash, Macronix MX29F040", flash.ShortDescription);
+    }
+
+    [Fact]
+    public void WriteRom_refuses_an_autoselect_only_chip_before_touching_it()
+    {
+        // No CFI means the pre-write check fails even though autoselect
+        // answers: the programmer's word-wide commands only reach the
+        // low-byte chip of a pair, so a write could never fully succeed.
+        var rom = TestRoms.MakeRom(0x100000);
+        var pristine = rom.ToArray();
+        var fake = BytePairRepro(rom);
+        using var session = Connect(fake);
+
+        Assert.Throws<FlashChipNotFoundException>(() => session.WriteRom(new byte[0x10000]));
+        Assert.Equal(0, fake.FlashModifyCount);
+        Assert.Equal(pristine, fake.Rom);
+    }
+
+    [Fact]
+    public void probe_decodes_real_8_bit_pair_repro_replies()
+    {
+        // Real reads from a Sonic 2 repro (2026-10-28): array data at 0, then
+        // the same high bytes with the Macronix ID in the low bytes.
+        static byte[] Hex(string s) => s.Split('-').Select(h => Convert.ToByte(h, 16)).ToArray();
+        var port = new ScriptedPort();
+        port.EnqueueReply(0x55, 0x55);
+        port.EnqueueReply(Hex("FF-FF-FE-00-00-00-02-06-00-00-02-00-00-00-02-00-00-00-02-00-00-00-02-00-00-00-02-00-00-00-02-00"));
+        port.EnqueueReply(0, 0, 0, 0, 0, 0); // no QRY (array data at 0x20)
+        port.EnqueueReply(Hex("FF-C2-FE-A4-00-00-02-00-00-C2-02-A4-00-00-02-00-00-C2-02-A4-00-00-02-00-00-C2-02-A4-00-00-02-00"));
+        using var session = Connect(port);
+
+        var flash = session.TryIdentifyFlash();
+
+        Assert.Equal("no CFI, 8-bit pair, mfr 0xC2 dev A4 (Macronix MX29F040)", flash?.Describe());
     }
 
     // Wire-level reply script for the probe, as the MegaWiFi Rev.C answered.
