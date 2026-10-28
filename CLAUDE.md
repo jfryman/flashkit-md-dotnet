@@ -65,8 +65,10 @@ if the section is missing.
     source"); behavior changes belong in separate commits with tests,
     or in FlashKitSession.
   - `DeviceConnector` / `PortDiscovery`: per-OS port scanning with
-    surfaced errors (Linux: ttyACM*/ttyUSB*; macOS: cu.usbmodem*/
-    cu.usbserial*, never tty.* which block on open; Windows: COM*).
+    surfaced errors (Linux: ttyUSB*; macOS: cu.usbserial*, never tty.*
+    which block on open; Windows: COM*). The programmer is FTDI, so
+    CDC-ACM nodes (ttyACM*/cu.usbmodem*) are deliberately NOT scanned:
+    probing an ESP32 cart's native USB resets it and blocks esptool.
   - `FlashKitSession`: the front-end API — GetInfo/ReadRom/WriteRom/
     ReadRam/WriteRam/BakeSave. Synchronous, progress via
     `Action<OperationProgress>` (each phase starts with Done=0),

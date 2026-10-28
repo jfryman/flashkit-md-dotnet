@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+BUG FIXES:
+
+ * core: port auto-detection no longer probes CDC-ACM serial ports
+   (`/dev/ttyACM*` on Linux, `/dev/cu.usbmodem*` on macOS). The
+   programmer is an FTDI device and never appears there, and probing
+   them could reset an attached ESP32 or Arduino board and keep its
+   port busy for other tools (such as esptool) until the app quit.
+   `--port` still accepts any port.
+
 ## 1.10.4 (August 14, 2026)
 
 IMPROVEMENTS:

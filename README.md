@@ -151,8 +151,10 @@ commands:
 ```
 
 The programmer is auto-detected by probing likely USB serial ports
-(`/dev/ttyACM*`/`/dev/ttyUSB*` on Linux, `/dev/cu.usbmodem*`/`/dev/cu.usbserial*`
-on macOS, `COM*` on Windows). Use `--port` to pin a specific port.
+(`/dev/ttyUSB*` on Linux, `/dev/cu.usbserial*` on macOS, `COM*` on Windows).
+CDC-ACM ports (`/dev/ttyACM*`, `/dev/cu.usbmodem*`: ESP32 boards, Arduinos and
+the like) are never probed, since opening them can reset the board. Use
+`--port` to pin a specific port.
 
 Dumps print an MD5 you can compare against the original Windows client's
 output; `write-rom` and `write-ram` verify by reading back.
