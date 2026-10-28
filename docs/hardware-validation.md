@@ -148,8 +148,8 @@ Notes / discrepancies:
     decoded as `no CFI, 8-bit pair, mfr 0xC2 dev A4 (Macronix MX29F040)`;
     `write-rom` still refuses it (no CFI), which is the safe outcome.
   - Every cart read normally after each probe.
-  - Pending: `info` on an empty slot; expect `Cart : No cart detected
-    (or non-flash cart with no valid header)`.
+  - Empty slot: `info` and `info --flash-id` both print `Cart : No cart
+    detected (or non-flash cart with no valid header)`, exit 0.
 
 - 2026-07-17, Windows box (COM3), post-1.0.1 enhancements validated on
   real hardware (local Release build, commit fd74c45):
