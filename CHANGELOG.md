@@ -1,8 +1,8 @@
 # Changelog
 
-## Unreleased
+## 1.11.0 (October 28, 2026)
 
-IMPROVEMENTS:
+FEATURES:
 
  * core: a cart with no valid header now gets a read-only flash
    identification (CFI query + AMD/Spansion autoselect ID), so a blank
@@ -13,6 +13,9 @@ IMPROVEMENTS:
  * cli: `info` prints `Cart`/`Flash` lines for blank or unrecognised flash
    carts and `No cart detected (or non-flash cart with no valid header)`
    for an empty slot; the new `--flash-id` flag forces the probe.
+
+IMPROVEMENTS:
+
  * gui, tui: the cartridge panel names a blank flash cart and its chip,
    and auto-write fires when one is inserted; auto-dump skips it.
  * release: builds use .NET SDK 10.0.403, System.IO.Hashing /
