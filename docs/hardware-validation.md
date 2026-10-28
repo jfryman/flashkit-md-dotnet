@@ -119,6 +119,20 @@ Windows box; divergences get investigated on the dev machine.
 
 Notes / discrepancies:
 
+- 2026-10-28, macOS, MegaWiFi Rev.C (Spansion S29GL064N, 8 MiB), blank
+  from the factory. `info` (v1.10.5) printed the empty-slot block
+  (`Unknown (X)`, `0K`, `0B`) although the cart was seated and fine;
+  `write-rom` worked and verified. Manual probe readings, which the
+  flash-ID probe in `info` and its tests are built on:
+  - blank reads at 0x000000 / 0x000100 / 0x200000 / 0x7FFFF0: all 0xFF
+  - CFI query @0x20: `00 51 00 52 00 59` ("QRY"); size byte (CFI word
+    0x27) = 0x17, i.e. 2^23 = 8 MiB
+  - autoselect: `00 01  22 7E  22 10  22 00` (mfr 0x0001, device
+    227E/2210/2200)
+  - after the 0xF0 reset, address 0 reads 0xFF again
+  - Pending: re-run `info` on this cart with a build containing the
+    probe; expect `Cart : Flash cart, blank (reads 0xFF)`.
+
 - 2026-07-17, Windows box (COM3), post-1.0.1 enhancements validated on
   real hardware (local Release build, commit fd74c45):
   - CFI flash-presence check, negative path: `write-rom` against the real

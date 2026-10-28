@@ -6,7 +6,7 @@ original Form1 handlers plus safety checks the original lacked).
 ```mermaid
 flowchart TD
   W[WriteRom image] --> C{skipFlashCheck?}
-  C -->|no| Q[CheckFlash: 0x98 at 0x55*2, expect QRY at word 0x10] -->|mismatch| FX[FlashChipNotFoundException]
+  C -->|no| Q[CheckFlash: shared CFI/ID probe, expect QRY at word 0x10] -->|mismatch| FX[FlashChipNotFoundException]
   C -->|yes| P
   Q -->|ok| P[pad to 64 KB, cap 4 MB]
   P --> E[erase 64 KB sectors: image extent, or whole chip if fullErase]
@@ -54,7 +54,9 @@ Requires a 4 MB chip; input must be non-empty, even length, at most 1 MB.
 
 ## Hardware notes
 
-- "Unknown (X) / 0K" (`CartInfo.CartDetected == false`) almost always means an unseated cart.
+- "Unknown (X) / 0K" (`CartInfo.CartDetected == false`, CLI `No cart detected ...`) almost always
+  means an unseated cart. A blank flash cart is distinguished by the flash ID probe
+  ([flash-identification.md](flash-identification.md)).
 - Real-hardware results live in `docs/hardware-validation.md`; James runs hardware tests himself.
 
 Related: [../core/summary.md](../core/summary.md), [../core/serial-protocol.md](../core/serial-protocol.md),

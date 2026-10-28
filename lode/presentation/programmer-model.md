@@ -29,7 +29,8 @@ stateDiagram-v2
   transition, deliberately **not** keyed on cart identity: auto-write changes the cart, so
   identity keying would rewrite in a loop. `cartProcessed` resets on removal, device loss, or any
   auto-setting change; failures are not retried every poll. Auto-dump and auto-write are mutually
-  exclusive (`CanToggleAutoDump` / `CanToggleAutoWrite`).
+  exclusive (`CanToggleAutoDump` / `CanToggleAutoWrite`). A blank/unrecognised flash cart counts as
+  inserted: auto-write fires, auto-dump skips it ([../cart/flash-identification.md](../cart/flash-identification.md)).
 - Dumps never overwrite: `UniquePath` appends " (2)", " (3)", ...
 - `Log` (`ObservableCollection<TransactionEntry>`) is the transaction log both UIs render.
 

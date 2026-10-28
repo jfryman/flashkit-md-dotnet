@@ -17,7 +17,9 @@ namespace FlashKit.Core.Tests;
 ///  - Flash (when <see cref="FlashWritable"/>): AMD command set as used by the
 ///    client — sector erase (AA/55/80/AA/55 then 0x30 per sector, 8 KB each),
 ///    unlock bypass (AA/55/20), bypass program (A0 + data, AND semantics),
-///    reset (F0, 90/00), CFI query (98 → 'QRY' at word 0x10, F0 exits).
+///    reset (F0, 90/00), CFI query (98 → 'QRY' at word 0x10, size exponent at
+///    word 0x27, F0 exits), autoselect (AA/55/90 → manufacturer at word 0,
+///    device ID at words 1/0x0E/0x0F, F0 exits).
 /// </summary>
 sealed class FakeFlashKitDevice : ISerialPort
 {
@@ -31,6 +33,21 @@ sealed class FakeFlashKitDevice : ISerialPort
 
     public bool FlashWritable { get; init; }
     public byte DeviceId { get; init; } = 0x55;
+
+    /// <summary>Autoselect manufacturer / device ID words and CFI device-size
+    /// exponent the flash chip reports (when <see cref="FlashWritable"/>).
+    /// Defaults are the MegaWiFi Rev.C's Spansion S29GL064N (8 MiB).</summary>
+    public ushort FlashManufacturer { get; init; } = 0x0001;
+    public ushort[] FlashDeviceIds { get; init; } = { 0x227E, 0x2210, 0x2200 };
+    public byte CfiSizeExponent { get; init; } = 0x17;
+
+    /// <summary>CFI query and autoselect commands received — lets tests
+    /// assert a cart was never probed.</summary>
+    public int FlashQueryCount { get; private set; }
+
+    /// <summary>Erase or program commands received (sector-erase confirm or
+    /// a bypass program), whether or not the chip honoured them.</summary>
+    public int FlashModifyCount { get; private set; }
 
     /// <summary>False simulates an empty cart slot: the bus floats, so reads
     /// return open-bus 0xFFFF and writes (including the 0xA13000 bank
@@ -64,6 +81,7 @@ sealed class FakeFlashKitDevice : ISerialPort
     bool programArmed;
     bool eraseArmed;
     bool cfiMode;
+    bool autoselectMode;
 
     public FakeFlashKitDevice(byte[] rom, int sramBytes = 0)
     {
@@ -235,7 +253,15 @@ sealed class FakeFlashKitDevice : ISerialPort
     {
         if (!CartInserted) return 0xFFFF;
         int byteAddr = wordAddr * 2;
-        if (cfiMode) return wordAddr switch { 0x10 => 0x0051, 0x11 => 0x0052, 0x12 => 0x0059, _ => (ushort)0 };
+        if (cfiMode) return wordAddr switch { 0x10 => 0x0051, 0x11 => 0x0052, 0x12 => 0x0059, 0x27 => CfiSizeExponent, _ => (ushort)0 };
+        if (autoselectMode) return wordAddr switch
+        {
+            0x00 => FlashManufacturer,
+            0x01 => FlashDeviceIds[0],
+            0x0E => FlashDeviceIds[1],
+            0x0F => FlashDeviceIds[2],
+            _ => (ushort)0,
+        };
         if (SramActive(byteAddr)) return (ushort)(0xFF00 | sram![SramIndex(wordAddr)]);
         return (ushort)((rom[byteAddr % rom.Length] << 8) | rom[(byteAddr + 1) % rom.Length]);
     }
@@ -279,6 +305,7 @@ sealed class FakeFlashKitDevice : ISerialPort
         if (programArmed)
         {
             programArmed = false;
+            FlashModifyCount++;
             if (FlashWritable)
             {
                 int b = (wordAddr * 2) % rom.Length;
@@ -295,6 +322,7 @@ sealed class FakeFlashKitDevice : ISerialPort
             flashSeq = 0;
             eraseArmed = false;
             cfiMode = false;
+            autoselectMode = false;
             return;
         }
         if (bypass)
@@ -306,11 +334,13 @@ sealed class FakeFlashKitDevice : ISerialPort
         if (v == 0x98)
         {
             // CFI query mode; a mask ROM cart (FlashWritable=false) ignores it
+            FlashQueryCount++;
             cfiMode = FlashWritable;
             return;
         }
         if (eraseArmed && v == 0x30)
         {
+            FlashModifyCount++;
             if (FlashWritable)
             {
                 int start = (wordAddr * 2) % rom.Length;
@@ -331,6 +361,13 @@ sealed class FakeFlashKitDevice : ISerialPort
             case 2:
                 if (wordAddr == 0x555 && v == 0x80) flashSeq = 3;
                 else if (wordAddr == 0x555 && v == 0x20) { bypass = true; flashSeq = 0; }
+                else if (wordAddr == 0x555 && v == 0x90)
+                {
+                    // autoselect; a mask ROM cart ignores it
+                    FlashQueryCount++;
+                    autoselectMode = FlashWritable;
+                    flashSeq = 0;
+                }
                 else flashSeq = 0;
                 break;
             case 3:

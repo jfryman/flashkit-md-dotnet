@@ -14,7 +14,10 @@ public sealed class CliApp
         usage: flashkit-md [--port <serial-port>] <command> [file]
                flashkit-md --version
         commands:
-          info               print cart ROM name/size and save-RAM size
+          info               print cart ROM name/size and save-RAM size; a
+                             cart with no valid header gets a read-only
+                             flash ID probe (blank flash vs empty slot)
+              --flash-id     always run the flash ID probe
           read-rom [file]    dump cart ROM (default file: <ROM name>.bin)
               --trust-header dump the size the ROM header declares instead
                              of the mirror-probed size (useful on flash
@@ -67,6 +70,7 @@ public sealed class CliApp
         bool fullErase = false;
         bool trustHeader = false;
         bool noFlashCheck = false;
+        bool flashId = false;
 
         for (int i = 0; i < args.Length; i++)
         {
@@ -104,6 +108,7 @@ public sealed class CliApp
             else if (arg == "--full-erase") fullErase = true;
             else if (arg == "--trust-header") trustHeader = true;
             else if (arg == "--no-flash-check") noFlashCheck = true;
+            else if (arg == "--flash-id") flashId = true;
             else if (command == null) command = arg;
             else if (file == null) file = arg;
             else
@@ -122,6 +127,12 @@ public sealed class CliApp
         if (trustHeader && command != "read-rom")
         {
             err.WriteLine("--trust-header only applies to read-rom");
+            return 2;
+        }
+
+        if (flashId && command != "info")
+        {
+            err.WriteLine("--flash-id only applies to info");
             return 2;
         }
 
@@ -160,7 +171,7 @@ public sealed class CliApp
             switch (command)
             {
                 case "info":
-                    return WithSession(portName, Info);
+                    return WithSession(portName, session => Info(session, flashId));
                 case "read-rom":
                     return WithSession(portName, session => ReadRom(session, file, trustHeader, applyPatchFile, createPatchBase));
                 case "write-rom":
@@ -197,9 +208,24 @@ public sealed class CliApp
         return 0;
     }
 
-    void Info(FlashKitSession session)
+    void Info(FlashKitSession session, bool probeFlash)
     {
-        var info = session.GetInfo();
+        var info = session.GetInfo(probeFlash);
+        if (!info.CartDetected)
+        {
+            con.WriteLine("Cart     : " + CartInfo.NoCartMessage);
+            return;
+        }
+        if (info.HeaderlessFlashStatus is string status)
+        {
+            // Blank or foreign flash: the header fields are meaningless, so
+            // report what the chip says instead of "Unknown / 0K".
+            con.WriteLine("Cart     : " + status);
+            con.WriteLine("Flash    : " + info.Flash!.Describe());
+            if (info.RomBytes > 0) con.WriteLine("ROM size : " + info.RomBytes / 1024 + "K (mirror-probed)");
+            if (info.RamBytes > 0) PrintRamSize(info.RamBytes);
+            return;
+        }
         con.WriteLine("ROM name : " + info.RomName);
         con.WriteLine("System   : " + info.SystemName);
         con.WriteLine("Region   : " + info.Region);
@@ -207,6 +233,7 @@ public sealed class CliApp
         if (info.HeaderRomBytes is int h && h != info.RomBytes)
             con.WriteLine("Header ROM size : " + h / 1024 + "K (read-rom --trust-header dumps this extent)");
         PrintRamSize(info.RamBytes);
+        if (probeFlash) con.WriteLine("Flash    : " + (info.Flash?.Describe() ?? "no flash chip answered"));
     }
 
     void PrintRamSize(int ramBytes)

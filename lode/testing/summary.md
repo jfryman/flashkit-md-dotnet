@@ -16,7 +16,11 @@ flowchart LR
 
 - `FakeFlashKitDevice` (an `ISerialPort`): emulates firmware + synthetic cart: mirrored ROM, banked SRAM
   at 0x200000 behind 0xA13000, AMD flash commands with AND semantics (skipped erase fails tests).
-- `ScriptedPort`: enqueue raw reply bytes, e.g. a bad device ID.
+- Fake flash chip also answers autoselect (`FlashManufacturer`/`FlashDeviceIds`, default S29GL064N)
+  and CFI size (`CfiSizeExponent`, default 0x17). `FlashQueryCount` / `FlashModifyCount` let tests
+  assert a cart was never probed / never erased or programmed.
+- `ScriptedPort`: enqueue raw reply bytes, e.g. a bad device ID, or the real MegaWiFi probe replies
+  (`FlashIdentifyTests`).
 - `DeviceConnector(enumeratePorts, portFactory, os)` lets tests pick an OS and port set:
 
 ```csharp
