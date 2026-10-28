@@ -130,8 +130,26 @@ Notes / discrepancies:
   - autoselect: `00 01  22 7E  22 10  22 00` (mfr 0x0001, device
     227E/2210/2200)
   - after the 0xF0 reset, address 0 reads 0xFF again
-  - Pending: re-run `info` on this cart with a build containing the
-    probe; expect `Cart : Flash cart, blank (reads 0xFF)`.
+  - Validated with a local build of the probe (osx-arm64): `info` prints
+    `Cart : Flash cart, blank (reads 0xFF)` and `Flash : CFI OK, 8 MiB,
+    mfr 0x0001 dev 227E/2210/2200 (Spansion S29GL064N family)`, exit 0;
+    identical on a second run (chip back in read-array mode).
+- 2026-10-28, same session, `info --flash-id` on other carts:
+  - Genuine Sonic 2 (mask ROM): `no flash chip answered`; raw reads at 0
+    identical before, during and after the autoselect sequence. Header-
+    valid carts are not probed by plain `info` (no `Flash` line).
+  - Sonic 3D Blast Director's Cut repro (4 MiB): `CFI OK, 4 MiB, mfr
+    0x0020 dev 2256 (ST/Micron)`. Device words 2/3 read 0000/0001 — not
+    an extended ID (word 1 does not end in 0x7E), so only word 1 is shown.
+  - Sonic 2 repro (looked like a mask ROM): two 8-bit Macronix MX29F040
+    chips. Word-wide commands (0x00 high byte) reach only the low-byte
+    chip, so autoselect answered in the low byte only (`FF-C2-FE-A4...`
+    vs array `FF-FF-FE-00...`, repeating every 4 words); no CFI. Now
+    decoded as `no CFI, 8-bit pair, mfr 0xC2 dev A4 (Macronix MX29F040)`;
+    `write-rom` still refuses it (no CFI), which is the safe outcome.
+  - Every cart read normally after each probe.
+  - Pending: `info` on an empty slot; expect `Cart : No cart detected
+    (or non-flash cart with no valid header)`.
 
 - 2026-07-17, Windows box (COM3), post-1.0.1 enhancements validated on
   real hardware (local Release build, commit fd74c45):

@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace FlashKit.Core;
 
 /// <summary>
@@ -6,16 +8,22 @@ namespace FlashKit.Core;
 /// is true when the chip answered the CFI query with "QRY";
 /// <paramref name="SizeBytes"/> is the CFI device size (2^n bytes), 0 when
 /// unknown. <paramref name="Manufacturer"/> and <paramref name="DeviceId"/>
-/// (device ID words 1/2/3) come from AMD/Spansion autoselect; DeviceId is
-/// empty when the chip did not enter autoselect.
+/// come from AMD/Spansion autoselect: DeviceId holds three words for the
+/// extended-ID scheme (first word ending in 0x7E), one otherwise, and is
+/// empty when the chip did not enter autoselect. <paramref name="ByteWide"/>
+/// marks a pair of 8-bit chips where only the low-byte chip answered, so
+/// the IDs are byte values (typical of repro carts).
 /// </summary>
-public sealed record FlashId(bool CfiOk, int SizeBytes, ushort Manufacturer, IReadOnlyList<ushort> DeviceId)
+public sealed record FlashId(bool CfiOk, int SizeBytes, ushort Manufacturer, IReadOnlyList<ushort> DeviceId,
+    bool ByteWide = false)
 {
-    // Known parts, keyed by manufacturer + all three device ID words. Add
-    // entries only from real-hardware autoselect reads or datasheets.
-    static readonly Dictionary<(ushort, ushort, ushort, ushort), string> Chips = new()
+    // Known parts, keyed by IdKey ("0001:227E/2210/2200" for a 16-bit chip,
+    // "C2:A4" for an 8-bit pair). Add entries only from real-hardware
+    // autoselect reads or datasheets.
+    static readonly Dictionary<string, string> Chips = new()
     {
-        [(0x0001, 0x227E, 0x2210, 0x2200)] = "Spansion S29GL064N family",
+        ["0001:227E/2210/2200"] = "Spansion S29GL064N family",
+        ["C2:A4"] = "Macronix MX29F040",
     };
 
     // JEDEC manufacturer codes (bank 1), for IDs not in the chip table.
@@ -28,10 +36,12 @@ public sealed record FlashId(bool CfiOk, int SizeBytes, ushort Manufacturer, IRe
         [0x00C2] = "Macronix",
     };
 
+    string Hex(ushort v) => v.ToString(ByteWide ? "X2" : "X4", CultureInfo.InvariantCulture);
+
+    string IdKey => Hex(Manufacturer) + ":" + string.Join('/', DeviceId.Select(Hex));
+
     /// <summary>Chip family name from the lookup table, or null.</summary>
-    public string? ChipName =>
-        DeviceId.Count == 3 && Chips.TryGetValue((Manufacturer, DeviceId[0], DeviceId[1], DeviceId[2]), out var name)
-            ? name : null;
+    public string? ChipName => DeviceId.Count > 0 && Chips.TryGetValue(IdKey, out var name) ? name : null;
 
     /// <summary>Chip name, else manufacturer name, else null.</summary>
     string? FriendlyName =>
@@ -46,13 +56,15 @@ public sealed record FlashId(bool CfiOk, int SizeBytes, ushort Manufacturer, IRe
     };
 
     /// <summary>Full one-line description, e.g. "CFI OK, 8 MiB, mfr 0x0001
-    /// dev 227E/2210/2200 (Spansion S29GL064N family)".</summary>
+    /// dev 227E/2210/2200 (Spansion S29GL064N family)" or "no CFI, 8-bit
+    /// pair, mfr 0xC2 dev A4 (Macronix MX29F040)".</summary>
     public string Describe()
     {
         var parts = new List<string> { CfiOk ? "CFI OK" : "no CFI" };
         if (SizeText is string size) parts.Add(size);
+        if (ByteWide) parts.Add("8-bit pair");
         parts.Add(DeviceId.Count > 0
-            ? $"mfr 0x{Manufacturer:X4} dev {string.Join('/', DeviceId.Select(d => d.ToString("X4", System.Globalization.CultureInfo.InvariantCulture)))}"
+            ? $"mfr 0x{Hex(Manufacturer)} dev {string.Join('/', DeviceId.Select(Hex))}"
             : "no autoselect ID");
         string text = string.Join(", ", parts);
         return FriendlyName is string name ? $"{text} ({name})" : text;
