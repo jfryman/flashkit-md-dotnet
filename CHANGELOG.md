@@ -15,8 +15,8 @@ IMPROVEMENTS:
    for an empty slot; the new `--flash-id` flag forces the probe.
  * gui, tui: the cartridge panel names a blank flash cart and its chip,
    and auto-write fires when one is inserted; auto-dump skips it.
- * release: builds use .NET SDK 10.0.403 and System.IO.Hashing /
-   System.IO.Ports 10.0.14 (servicing updates).
+ * release: builds use .NET SDK 10.0.403, System.IO.Hashing /
+   System.IO.Ports 10.0.14 and Avalonia 12.1.4 (servicing updates).
 
 ## 1.10.5 (October 27, 2026)
 
