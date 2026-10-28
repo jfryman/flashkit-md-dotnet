@@ -130,6 +130,8 @@ Notes / discrepancies:
     C792E0F7CDA80E98D8B6462AC4DDA329.
   - `info` then reports `ROM size : 8192K`; a plain `read-rom` dumped
     8,388,608 bytes, byte-identical to the source.
+  - Console boot test: a Tower of Power test ROM, written to the MegaWiFi
+    with the 8 MiB-capable `write-rom`, boots fine on a Mega Drive.
 
 - 2026-10-28, macOS, MegaWiFi Rev.C (Spansion S29GL064N, 8 MiB), blank
   from the factory. `info` (v1.10.5) printed the empty-slot block
