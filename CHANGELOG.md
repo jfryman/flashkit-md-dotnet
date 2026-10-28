@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.12.0 (October 28, 2026)
 
 FEATURES:
 
