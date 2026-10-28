@@ -13,6 +13,9 @@ docs/hardware-validation.md for real-hardware results.
   release process. Human-oriented prose.
 - CLAUDE.md (this file) — agent working rules, condensed.
 - docs/RELEASING.md — release signing/notarization secrets and behavior.
+- lode/ — AI-owned project memory (Lode Coding); start at
+  lode/lode-map.md. Describes current state, not history; lode/tmp/ is
+  gitignored scratch.
 
 A user-visible change usually needs README.md updated; a workflow or
 build change usually needs DEVELOPING.md. Update this file only for

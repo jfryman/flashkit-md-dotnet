@@ -1,0 +1,20 @@
+# Lode map
+
+- [summary.md](summary.md) — project snapshot and layer diagram
+- [terminology.md](terminology.md) — domain terms (save window, bake-save, held session, CDC-ACM…)
+- [practices.md](practices.md) — where code goes, change hygiene, safety rules, lessons
+- core/
+  - [summary.md](core/summary.md) — FlashKitSession API, CartInfo, exceptions, verbatim-port rule
+  - [serial-protocol.md](core/serial-protocol.md) — Device command bytes, ID handshake, guarded close
+  - [port-discovery.md](core/port-discovery.md) — per-OS scan patterns, why CDC-ACM is never probed
+- cart/
+  - [flash-and-save.md](cart/flash-and-save.md) — CFI check, erase extent, ghost saves, odd-byte SRAM, bake-save
+- presentation/
+  - [programmer-model.md](presentation/programmer-model.md) — threading, device gate, held session, auto actions
+- build/
+  - [toolchain.md](build/toolchain.md) — SDK/ensure-dotnet, MSBuild layout, publish, dependabot, release
+- testing/
+  - [summary.md](testing/summary.md) — fake device, seams, wire-format lock, test rules
+- plans/
+  - [backlog.md](plans/backlog.md) — xunit v4 (blocked), USB VID port matching (idea)
+- tmp/ — git-ignored session scraps

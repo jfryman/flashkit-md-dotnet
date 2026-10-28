@@ -1,0 +1,26 @@
+# Terminology
+
+- FlashKit MD - krikzz's USB cart programmer for Mega Drive; FTDI USB-serial on the host side
+- Programmer / device - the FlashKit hardware itself (as opposed to the cart)
+- Cart - the cartridge seated in the programmer: mask-ROM game cart or FlashKit flash cart
+- Flash cart - writable cart with an AMD-command-set CFI flash chip (validated one is 4 MB, no SRAM)
+- Save RAM / SRAM - battery-backed save memory at 0x200000, 8-bit on odd bytes, banked via 0xA13000
+- Save window - the 0x200000 address region where save RAM (or a baked save) lives
+- Bake-save - programming a save snapshot into flash at 0x200000 on SRAM-less flash carts (read-only saves)
+- Mirror probing - ROM size detection by checking where the address space repeats
+- Header size - ROM size the cart header declares (end address at 0x1A4 + 1); `--trust-header`
+- Full erase - wipe the whole 4 MB chip (`--full-erase`); unsafe on smaller mirrored chips
+- Ghost saves - stale flash above a written image that games read as save data
+- CFI / QRY - Common Flash Interface query (0x98) answered with "QRY"; `CheckFlash` uses it before destructive ops
+- 32X - Sega 32X title; detected by "32X" in the system field at 0x100; dumps use `.32x`
+- Region - header field at 0x1F0 (W/U/J/E/X letter codes)
+- Verbatim port - `Device.cs`/`Cart.cs`, kept diffable against the original C# client
+- Session - `FlashKitSession`: one connected programmer + the high-level operations
+- Held session - GUI/TUI keep one session open while the programmer is reachable (tcdrain wedge workaround)
+- Guarded close - `SystemSerialPort` discards output and abandons a stuck `Close()`
+- Device gate - `ProgrammerModel` semaphore serializing poll and operations
+- Auto-dump / auto-write - actions fired on cart insertion (no-cart -> cart poll transition)
+- Transaction log - `ProgrammerModel.Log` of `TransactionEntry` cards shown by GUI/TUI
+- CDC-ACM - USB serial class (ttyACM*, cu.usbmodem*): ESP32 native USB, Arduinos; never a FlashKit
+- MTP - Microsoft.Testing.Platform, the test runner xunit v4 requires (not adopted yet)
+- RID - .NET runtime identifier (linux-x64, osx-arm64, win-x64, ...)
