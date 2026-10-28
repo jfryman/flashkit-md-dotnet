@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+IMPROVEMENTS:
+
+ * release: builds use .NET SDK 10.0.402 and System.IO.Hashing /
+   System.IO.Ports 10.0.12 (servicing updates).
+
 BUG FIXES:
 
  * core: port auto-detection no longer probes CDC-ACM serial ports
