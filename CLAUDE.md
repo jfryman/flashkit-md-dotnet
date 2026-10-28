@@ -156,8 +156,10 @@ the port unopenable until the adapter was replugged).
   Verifies compare odd bytes only.
 - write-rom erases only the image's extent by default (original parity);
   stale flash above the image appears as ghost saves in games. --full-erase
-  wipes the whole 4 MB chip but would corrupt ROMs on smaller mirrored
-  chips — that's why it is opt-in.
+  wipes exactly the chip's CFI size (4 MB when the CFI check is skipped).
+- Flash chip size comes from CFI, capped at 8 MiB (the MegaWiFi maps 8 MiB
+  flat via its ~CART_IN/A22 hack). Only read above 4 MB when the header
+  declares more — ordinary carts must not be probed there.
 - The FlashKit flash cart validated here has no SRAM; bake-save programs a
   read-only save snapshot into flash at 0x200000 as a workaround.
 - ROM size detection relies on mirror probing, so a partially erased flash

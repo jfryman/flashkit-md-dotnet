@@ -3,13 +3,14 @@
 - FlashKit MD - krikzz's USB cart programmer for Mega Drive; FTDI USB-serial on the host side
 - Programmer / device - the FlashKit hardware itself (as opposed to the cart)
 - Cart - the cartridge seated in the programmer: mask-ROM game cart or FlashKit flash cart
-- Flash cart - writable cart with an AMD-command-set CFI flash chip (validated one is 4 MB, no SRAM)
+- Flash cart - writable cart with an AMD-command-set CFI flash chip (FlashKit's is 4 MB, no SRAM; MegaWiFi 8 MiB)
 - Save RAM / SRAM - battery-backed save memory at 0x200000, 8-bit on odd bytes, banked via 0xA13000
 - Save window - the 0x200000 address region where save RAM (or a baked save) lives
 - Bake-save - programming a save snapshot into flash at 0x200000 on SRAM-less flash carts (read-only saves)
 - Mirror probing - ROM size detection by checking where the address space repeats
 - Header size - ROM size the cart header declares (end address at 0x1A4 + 1); `--trust-header`
-- Full erase - wipe the whole 4 MB chip (`--full-erase`); unsafe on smaller mirrored chips
+- Full erase - wipe the whole chip (`--full-erase`), sized from CFI (4 MB with `--no-flash-check`)
+- Flat 8 MiB - cart answering 0x000000-0x7FFFFF with no mapper (MegaWiFi: ~CART_IN tied to A22)
 - Ghost saves - stale flash above a written image that games read as save data
 - CFI / QRY - Common Flash Interface query (0x98) answered with "QRY"; `CheckFlash` uses it before destructive ops
 - Autoselect - AMD/Spansion ID mode (AA/55/90): manufacturer + 3 device ID words; exited with 0xF0

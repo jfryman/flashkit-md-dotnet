@@ -9,6 +9,7 @@
   - [port-discovery.md](core/port-discovery.md) — per-OS scan patterns, why CDC-ACM is never probed
 - cart/
   - [flash-and-save.md](cart/flash-and-save.md) — CFI check, erase extent, ghost saves, odd-byte SRAM, bake-save
+  - [address-space.md](cart/address-space.md) — 4 MB vs 8 MiB, MegaWiFi ~CART_IN/A22 flat map, read-above-4MB rule
   - [flash-identification.md](cart/flash-identification.md) — read-only CFI/autoselect probe, blank flash vs empty slot
 - presentation/
   - [programmer-model.md](presentation/programmer-model.md) — threading, device gate, held session, auto actions
@@ -17,5 +18,5 @@
 - testing/
   - [summary.md](testing/summary.md) — fake device, seams, wire-format lock, test rules
 - plans/
-  - [backlog.md](plans/backlog.md) — xunit v4 (blocked), USB VID port matching (idea), 8 MiB write-rom
+  - [backlog.md](plans/backlog.md) — xunit v4 (blocked), USB VID port matching (idea)
 - tmp/ — git-ignored session scraps

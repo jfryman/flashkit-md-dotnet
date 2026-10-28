@@ -134,10 +134,12 @@ commands:
                      diff the dump against <base> and write a patch
                      instead of the ROM (default: <name>.ips; an
                      .xdelta/.vcdiff output name writes xdelta)
-  write-rom <file>   erase flash cart and write ROM image
-      --full-erase   erase the entire 4 MB chip first, so no stale
-                     data above the image shows up as ghost saves
-                     (only for carts with a full-size 4 MB chip)
+  write-rom <file>   erase flash cart and write ROM image (up to the
+                     flash chip's size, max 8 MiB)
+      --full-erase   erase the whole flash chip first (size from
+                     the CFI query; 4 MB with --no-flash-check), so
+                     no stale data above the image shows up as
+                     ghost saves
       --patch <patch>
                      apply an IPS or xdelta patch to the image
                      before flashing
@@ -187,8 +189,17 @@ original client). If the cart previously held a larger ROM, the leftover
 data above the new image stays on the chip — and a game with save support
 may read it through the save-RAM window at `0x200000` and show "corrupted"
 ghost save slots on console. Use `write-rom --full-erase` to wipe the whole
-chip first (only on carts with a full-size 4 MB chip — on smaller chips the
-upper address space mirrors the ROM and a full erase would corrupt it).
+chip first. The chip's size comes from its CFI answer, so a full erase
+covers exactly the chip, whatever its size (with `--no-flash-check` there is
+no CFI answer and it assumes 4 MB).
+
+`write-rom` accepts images up to the flash chip's size, at most 8 MiB, and
+refuses a larger image before erasing anything. 8 MiB needs a cart that
+maps flash flat across 0x000000–0x7FFFFF, like the MegaWiFi (validated on a
+Rev.C board). `read-rom` and `info` report a size above 4 MB only when the
+cart's header declares one and the upper half really differs from the lower
+half; for anything else, `read-rom --trust-header` dumps the size the header
+declares, up to 8 MiB.
 
 The FlashKit cart plays saves-capable games but cannot persist saves unless
 its board actually has SRAM populated; `info` reporting `RAM size : 0B` on

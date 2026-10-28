@@ -29,10 +29,12 @@ public sealed class CliApp
                              diff the dump against <base> and write a patch
                              instead of the ROM (default: <name>.ips; an
                              .xdelta/.vcdiff output name writes xdelta)
-          write-rom <file>   erase flash cart and write ROM image
-              --full-erase   erase the entire 4 MB chip first, so no stale
-                             data above the image shows up as ghost saves
-                             (only for carts with a full-size 4 MB chip)
+          write-rom <file>   erase flash cart and write ROM image (up to the
+                             flash chip's size, max 8 MiB)
+              --full-erase   erase the whole flash chip first (size from
+                             the CFI query; 4 MB with --no-flash-check), so
+                             no stale data above the image shows up as
+                             ghost saves
               --patch <patch>
                              apply an IPS or xdelta patch to the image
                              before flashing

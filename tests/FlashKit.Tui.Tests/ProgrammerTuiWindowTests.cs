@@ -50,7 +50,7 @@ public class ProgrammerTuiWindowTests : IDisposable
 
     static byte[] BlankFlash()
     {
-        var b = new byte[0x400000];
+        var b = new byte[0x800000];
         Array.Fill(b, (byte)0xFF);
         return b;
     }

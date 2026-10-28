@@ -22,7 +22,7 @@ public class FlashIdentifyTests
     [Fact]
     public void GetInfo_identifies_a_blank_flash_cart()
     {
-        var fake = new FakeFlashKitDevice(Blank(0x400000)) { FlashWritable = true };
+        var fake = new FakeFlashKitDevice(Blank(0x800000)) { FlashWritable = true };
         using var session = Connect(fake);
 
         var info = session.GetInfo();

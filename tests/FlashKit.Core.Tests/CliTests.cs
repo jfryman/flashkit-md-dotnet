@@ -78,7 +78,7 @@ public class CliTests : IDisposable
     [Fact]
     public void info_reports_a_blank_flash_cart_instead_of_unknown()
     {
-        var blank = new byte[0x400000];
+        var blank = new byte[0x800000];
         Array.Fill(blank, (byte)0xFF);
         var fake = new FakeFlashKitDevice(blank) { FlashWritable = true };
         int exit = App(fake).Run(new[] { "info" });
@@ -122,7 +122,7 @@ public class CliTests : IDisposable
 
         Assert.Equal(0, exit);
         Assert.Contains("ROM name : TEST GAME (U)", stdout.ToString());
-        Assert.Contains("Flash    : CFI OK, 8 MiB", stdout.ToString());
+        Assert.Contains("Flash    : CFI OK, 512 KiB", stdout.ToString());
     }
 
     [Fact]

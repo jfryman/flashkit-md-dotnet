@@ -126,7 +126,7 @@ public class FlashKitSessionTests
 
         Assert.Throws<ArgumentException>(() => session.ReadRom(size: 0x40001));
         Assert.Throws<ArgumentException>(() => session.ReadRom(size: 0));
-        Assert.Throws<ArgumentException>(() => session.ReadRom(size: 0x400002));
+        Assert.Throws<ArgumentException>(() => session.ReadRom(size: 0x800002)); // beyond the 8 MiB cart space
     }
 
     [Fact]

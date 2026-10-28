@@ -166,8 +166,9 @@ public static class IpsPatch
     }
 
     // A record offset of 0x454F46 would be read back as the EOF marker.
-    // Unreachable for Mega Drive / 32X ROMs (<= 4 MB < 0x454F46), so this is
-    // a guard rather than the (byte-shifting) workaround a >4 MB target needs.
+    // Only reachable for targets over 4 MB (flat 8 MiB carts such as the
+    // MegaWiFi); this is a guard rather than the (byte-shifting) workaround,
+    // since xdelta already covers large targets.
     static void GuardOffset(int offset)
     {
         if (offset == EofMarker)

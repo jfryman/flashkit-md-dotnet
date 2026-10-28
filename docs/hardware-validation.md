@@ -119,6 +119,18 @@ Windows box; divergences get investigated on the dev machine.
 
 Notes / discrepancies:
 
+- 2026-10-28, macOS, MegaWiFi Rev.C (S29GL064N, 8 MiB flat via the
+  `~CART_IN`/A22 hack), 8 MiB write-rom:
+  - Address-line check: a 64 KB marker written at 0x000000 did not appear
+    at 0x010000, 0x020000, ..., 0x400000, 0x600000 or 0x7F0000 (all read
+    0xFF), so A16–A22 reach the chip and the FlashKit does not hold A22
+    low through B32.
+  - `write-rom` of an 8 MiB image whose two halves differ (header end
+    0x7FFFFF): erase + write + verify OK in 216 s, MD5
+    C792E0F7CDA80E98D8B6462AC4DDA329.
+  - `info` then reports `ROM size : 8192K`; a plain `read-rom` dumped
+    8,388,608 bytes, byte-identical to the source.
+
 - 2026-10-28, macOS, MegaWiFi Rev.C (Spansion S29GL064N, 8 MiB), blank
   from the factory. `info` (v1.10.5) printed the empty-slot block
   (`Unknown (X)`, `0K`, `0B`) although the cart was seated and fine;
