@@ -2,7 +2,7 @@
 
 ```mermaid
 flowchart LR
-  G[global.json SDK 10.0.402, rollForward latestFeature] --> E[eng/ensure-dotnet.sh]
+  G[global.json SDK 10.0.403, rollForward latestFeature] --> E[eng/ensure-dotnet.sh]
   E --> CI[eng/ci.sh: restore, build -warnaserror, test]
   E --> PUB[eng/publish.sh: trimmed single-file per RID]
   PUB --> APP[packaging/macos/make-app.sh .app]
