@@ -81,8 +81,7 @@ id?.ShortDescription;    // "8 MiB flash, Spansion S29GL064N family" (GUI/TUI RO
 - Hit on a factory-blank MegaWiFi Rev.C (S29GL064N, 8 MiB): `info` looked dead while `write-rom`
   worked. Reference reads (MegaWiFi, ST repro, MX29F040-pair repro, genuine Sonic 2) are in
   `docs/hardware-validation.md` (2026-10-28) and replayed by `FlashIdentifyTests`.
-- `write-rom` still caps images at 4 MB; 8 MiB support is a separate task
-  ([../plans/backlog.md](../plans/backlog.md)).
+- The CFI size it reports bounds `write-rom` and `--full-erase` ([address-space.md](address-space.md)).
 
 Related: [flash-and-save.md](flash-and-save.md), [../core/summary.md](../core/summary.md),
 [../presentation/programmer-model.md](../presentation/programmer-model.md),

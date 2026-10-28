@@ -16,12 +16,6 @@ depends on `xunit.v3.extensibility.core` 3.2.2). When it does: remove the depend
 xunit.v3, opt into MTP in global.json, switch ci.sh/ci.yml to `dotnet test --solution`, drop
 Test.Sdk / runner.visualstudio / coverlet.collector. Details: [../build/toolchain.md](../build/toolchain.md).
 
-## 8 MiB write-rom (separate task)
-
-`WriteRom`/`ReadRom`/`HeaderRomSize` cap at `FlashChipBytes` = 4 MB. The MegaWiFi Rev.C has an 8 MiB
-S29GL064N (CFI size 0x17, see [../cart/flash-identification.md](../cart/flash-identification.md)).
-Supporting it needs its own design (address width, full-erase size from CFI, mirror probing).
-
 ## Port matching by USB VID (idea)
 
 Name filtering cannot exclude non-FTDI USB-serial bridges (CP210x, CH340) that also enumerate as

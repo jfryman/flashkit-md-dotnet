@@ -1,5 +1,25 @@
 # Changelog
 
+## Unreleased
+
+FEATURES:
+
+ * core: `write-rom` supports flash chips up to 8 MiB (validated on the
+   MegaWiFi Rev.C, whose 8 MiB flash is mapped flat across
+   0x000000–0x7FFFFF). The chip size comes from the CFI query, and
+   `read-rom`/`info` detect an 8 MiB ROM when its header declares more
+   than 4 MB.
+
+IMPROVEMENTS:
+
+ * core: `write-rom --full-erase` erases exactly the chip's CFI size
+   instead of a fixed 4 MB, so it is now safe on smaller chips.
+
+BUG FIXES:
+
+ * core: `write-rom` refuses an image larger than the flash chip before
+   erasing anything; it used to silently drop everything past 4 MB.
+
 ## 1.11.0 (October 28, 2026)
 
 FEATURES:

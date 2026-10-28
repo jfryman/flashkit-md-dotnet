@@ -7,8 +7,10 @@ original Form1 handlers plus safety checks the original lacked).
 flowchart TD
   W[WriteRom image] --> C{skipFlashCheck?}
   C -->|no| Q[CheckFlash: shared CFI/ID probe, expect QRY at word 0x10] -->|mismatch| FX[FlashChipNotFoundException]
-  C -->|yes| P
-  Q -->|ok| P[pad to 64 KB, cap 4 MB]
+  Q -->|ok, chip = CFI size, max 8 MiB| S{image > chip?}
+  C -->|yes, chip = 4 MB| S
+  S -->|yes| AX[ArgumentException, nothing erased]
+  S -->|no| P[pad to 64 KB]
   P --> E[erase 64 KB sectors: image extent, or whole chip if fullErase]
   E --> WR[unlock bypass, program 4 KB blocks]
   WR --> V[read back, byte compare] -->|diff| VX[VerifyException offset]
@@ -16,9 +18,13 @@ flowchart TD
 
 ## ROM
 
-- Size detection is mirror probing (`Cart.getRomSize`). On a partially erased flash cart it can
-  report sizes a mask ROM never would; `ReadHeaderRomSize()` / `--trust-header` uses the header's
-  end address at 0x1A4 (+1) instead, null when implausible.
+- Size detection is mirror probing (`Cart.getRomSize`, verbatim, stops at 4 MB). On a partially
+  erased flash cart it can report sizes a mask ROM never would; `ReadHeaderRomSize()` /
+  `--trust-header` uses the header's end address at 0x1A4 (+1) instead (plausible up to 8 MiB).
+- `ProbeRomSize` (Core) extends past 4 MB only when the probe hit 4 MB **and** the header declares
+  more **and** 512-byte samples at 0x400000+k differ from k (k = 0, 512K, ... 3.5M); then 8 MiB.
+  The header gate keeps A22-high reads off ordinary carts; SSF2-style mapper carts (header 5 MB)
+  mirror there and stay 4 MB. See [address-space.md](address-space.md).
 - 32X carts: "32X" in the 16-byte system field at 0x100. Suggested dump extension `.32x`, else `.bin`.
   Verified on DOOM and Kolibri vs five MD titles.
 - Suggested names collapse runs of spaces in the 48-char header name.
@@ -27,8 +33,11 @@ flowchart TD
 
 - Default erase covers only the image extent (original parity). Stale flash above it shows up in
   games as **ghost saves**.
-- `--full-erase` wipes the full 4 MB chip, but on smaller chips the ROM mirrors into the upper
-  space, so full erase would corrupt it. That is why it is opt-in.
+- Chip size = `CheckFlash().SizeBytes` (CFI), capped at 8 MiB; 4 MB when CFI has no size or
+  `skipFlashCheck`. An image larger than the chip throws `ArgumentException` before any erase
+  (the original silently truncated at 4 MB).
+- `--full-erase` erases exactly the chip size, so smaller mirrored chips are no longer
+  over-erased. Still opt-in (it is slow: ~216 s for erase+write+verify of 8 MiB).
 - On any exception the session calls `flashResetByPass()` best-effort before rethrowing.
 
 ## Save RAM

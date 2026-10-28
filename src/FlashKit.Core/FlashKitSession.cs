@@ -86,7 +86,12 @@ public sealed record CartInfo(string RomName, int RomBytes, int RamBytes, int? H
 public sealed class FlashKitSession : IDisposable
 {
     const int SaveWindow = 0x200000;
-    const int FlashChipBytes = 0x400000;
+    // Flash size assumed when CFI gives none (or the check is skipped): the
+    // original client's 4 MB chip.
+    const int DefaultChipBytes = 0x400000;
+    // Cart address space: the standard 4 MB window plus the Mega-CD region a
+    // flat-mapped cart (MegaWiFi's ~CART_IN/A22 hack) answers in.
+    const int MaxCartBytes = 0x800000;
 
     readonly ISerialPort port;
 
@@ -132,7 +137,7 @@ public sealed class FlashKitSession : IDisposable
     {
         Device.setDelay(1);
         var hdr = ReadHeader();
-        var info = new CartInfo(Cart.getRomName(), Cart.getRomSize(), Cart.getRamSize(),
+        var info = new CartInfo(Cart.getRomName(), ProbeRomSize(hdr), Cart.getRamSize(),
             HeaderRomSize(hdr), IsThirtyTwoX(hdr), RegionName(hdr),
             HeaderValid: HasSegaSignature(hdr), HeaderBlank: Array.TrueForAll(hdr, b => b == 0xFF));
         return info.HeaderValid && !probeFlash ? info : info with { Flash = TryIdentifyFlash() };
@@ -195,7 +200,7 @@ public sealed class FlashKitSession : IDisposable
         // within the chip; anything else (blank flash reads 0xFF..) is null.
         long start = (uint)((header[0x1A0] << 24) | (header[0x1A1] << 16) | (header[0x1A2] << 8) | header[0x1A3]);
         long size = (uint)((header[0x1A4] << 24) | (header[0x1A5] << 16) | (header[0x1A6] << 8) | header[0x1A7]) + 1L;
-        if (start != 0 || size < 0x200 || size > FlashChipBytes || size % 2 != 0) return null;
+        if (start != 0 || size < 0x200 || size > MaxCartBytes || size % 2 != 0) return null;
         return (int)size;
     }
 
@@ -203,10 +208,10 @@ public sealed class FlashKitSession : IDisposable
     /// mirror-probed size (e.g. with <see cref="ReadHeaderRomSize"/>).</summary>
     public byte[] ReadRom(Action<OperationProgress>? progress = null, int? size = null)
     {
-        if (size is int s && (s <= 0 || s % 2 != 0 || s > FlashChipBytes))
+        if (size is int s && (s <= 0 || s % 2 != 0 || s > MaxCartBytes))
             throw new ArgumentException("invalid ROM size override: " + s);
         Device.setDelay(1);
-        int romSize = size ?? Cart.getRomSize();
+        int romSize = size ?? ProbeRomSize(ReadHeader());
         var rom = new byte[romSize];
         progress?.Invoke(new(OperationPhase.Read, 0, romSize));
         Device.writeWord(0xA13000, 0x0000);
@@ -220,16 +225,44 @@ public sealed class FlashKitSession : IDisposable
         return rom;
     }
 
+    /// <summary>Mirror-probed ROM size. The ported probe stops at 4 MB; a
+    /// flat 8 MiB flash cart (MegaWiFi) is recognised only when the probe hits
+    /// that limit, the header declares more, and the upper half
+    /// (0x400000+) differs from the lower half. The header gate keeps A22-high
+    /// reads off ordinary carts; mapper carts (SSF2's header says 5 MB) mirror
+    /// there and stay at 4 MB.</summary>
+    int ProbeRomSize(byte[] header)
+    {
+        int len = Cart.getRomSize();
+        if (len != DefaultChipBytes || HeaderRomSize(header) is not > DefaultChipBytes) return len;
+        var lower = new byte[512];
+        var upper = new byte[512];
+        Device.writeWord(0xA13000, 0x0000);
+        for (int off = 0; off < DefaultChipBytes; off += 0x80000)
+        {
+            Device.setAddr(off);
+            Device.read(lower, 0, lower.Length);
+            Device.setAddr(DefaultChipBytes + off);
+            Device.read(upper, 0, upper.Length);
+            if (!lower.AsSpan().SequenceEqual(upper)) return MaxCartBytes;
+        }
+        return len;
+    }
+
     static readonly byte[] CfiQry = { 0x00, 0x51, 0x00, 0x52, 0x00, 0x59 };
 
     /// <summary>Verifies a CFI-capable flash chip answers on the cart bus
     /// before destructive writes — fails fast instead of "erasing" a mask ROM
     /// cart and finding out at verify time. Not part of the original client;
-    /// the check is the standard CFI probe, as flashkit-md-py does it.</summary>
-    public void CheckFlash()
+    /// the check is the standard CFI probe, as flashkit-md-py does it.
+    /// Returns the chip's identification: its CFI size bounds writes and
+    /// full erase.</summary>
+    public FlashId CheckFlash()
     {
         var cfi = new byte[6];
-        if (ProbeFlash(cfi)?.CfiOk != true) throw new FlashChipNotFoundException(cfi);
+        var id = ProbeFlash(cfi);
+        if (id?.CfiOk != true) throw new FlashChipNotFoundException(cfi);
+        return id;
     }
 
     /// <summary>
@@ -304,24 +337,30 @@ public sealed class FlashKitSession : IDisposable
     static ushort Word(byte[] b, int byteAddr) => (ushort)((b[byteAddr] << 8) | b[byteAddr + 1]);
 
     /// <summary>
-    /// Erases, programs, and verifies a ROM image (padded to 64 KB, capped
-    /// at the 4 MB chip). <paramref name="fullErase"/> wipes the whole chip
-    /// first — only safe on carts with a full-size chip, since smaller chips
-    /// mirror the ROM into the upper address space.
+    /// Erases, programs, and verifies a ROM image (padded to 64 KB). The
+    /// chip size comes from CFI, capped at the 8 MiB cart space; it is 4 MB
+    /// when CFI gives none or <paramref name="skipFlashCheck"/> skips the
+    /// probe. An image larger than the chip is refused before anything is
+    /// erased. <paramref name="fullErase"/> wipes exactly that chip size
+    /// first, so smaller (mirrored) chips are no longer over-erased.
     /// </summary>
     public void WriteRom(byte[] image, bool fullErase = false, Action<OperationProgress>? progress = null, bool skipFlashCheck = false)
     {
         Device.setDelay(0);
-        if (!skipFlashCheck) CheckFlash();
+        int chipBytes = DefaultChipBytes;
+        if (!skipFlashCheck && CheckFlash().SizeBytes is > 0 and var cfiBytes)
+            chipBytes = Math.Min(cfiBytes, MaxCartBytes);
+        if (image.Length > chipBytes)
+            throw new ArgumentException($"image is {image.Length} bytes but the flash chip holds {chipBytes} bytes");
         int romSize = image.Length;
         if (romSize % 65536 != 0) romSize = romSize / 65536 * 65536 + 65536;
-        if (romSize > FlashChipBytes) romSize = FlashChipBytes;
+        if (romSize > chipBytes) romSize = chipBytes;
         var rom = new byte[romSize];
-        Array.Copy(image, rom, Math.Min(image.Length, romSize));
+        Array.Copy(image, rom, image.Length);
 
         try
         {
-            int eraseLen = fullErase ? FlashChipBytes : romSize;
+            int eraseLen = fullErase ? chipBytes : romSize;
             progress?.Invoke(new(OperationPhase.Erase, 0, eraseLen));
             Device.flashResetByPass();
             for (int i = 0; i < eraseLen; i += 65536)

@@ -11,7 +11,7 @@ namespace FlashKit.Core.Tests;
 /// registers. Reads reply big-endian words.
 ///
 /// Cartridge model:
-///  - ROM: power-of-two image, mirrored across the 4 MB cart space.
+///  - ROM: power-of-two image, mirrored across the cart space.
 ///  - SRAM: one 8-bit byte per 16-bit word (low byte; high byte reads 0xFF),
 ///    mapped at 0x200000 while the 0xA13000 bank register is non-zero.
 ///  - Flash (when <see cref="FlashWritable"/>): AMD command set as used by the
@@ -36,10 +36,16 @@ sealed class FakeFlashKitDevice : ISerialPort
 
     /// <summary>Autoselect manufacturer / device ID words and CFI device-size
     /// exponent the flash chip reports (when <see cref="FlashWritable"/>).
-    /// Defaults are the MegaWiFi Rev.C's Spansion S29GL064N (8 MiB).</summary>
+    /// IDs default to the MegaWiFi Rev.C's Spansion S29GL064N; the size
+    /// defaults to the ROM image's length.</summary>
     public ushort FlashManufacturer { get; init; } = 0x0001;
     public ushort[] FlashDeviceIds { get; init; } = { 0x227E, 0x2210, 0x2200 };
-    public byte CfiSizeExponent { get; init; } = 0x17;
+    public byte CfiSizeExponent
+    {
+        get => cfiSizeExponent ?? (byte)System.Numerics.BitOperations.Log2((uint)rom.Length);
+        init => cfiSizeExponent = value;
+    }
+    readonly byte? cfiSizeExponent;
 
     /// <summary>Models a repro cart's pair of 8-bit non-CFI chips (e.g. two
     /// MX29F040): commands are sent as words with a 0x00 high byte, so only
