@@ -14,18 +14,20 @@ public class PortDiscoveryTests
     };
 
     [Fact]
-    public void linux_keeps_only_usb_serial_devices()
+    public void linux_keeps_only_usb_serial_converters_never_cdc_acm()
     {
         Assert.Equal(
-            new[] { "/dev/ttyACM0", "/dev/ttyACM1", "/dev/ttyUSB0" },
+            new[] { "/dev/ttyUSB0" },
             PortDiscovery.FilterCandidates(LinuxPorts, HostOs.Linux));
     }
 
     [Fact]
-    public void macos_keeps_only_cu_usb_devices_never_tty_variants()
+    public void macos_keeps_only_cu_usbserial_never_tty_or_usbmodem()
     {
+        // usbmodem is CDC-ACM (e.g. an ESP32's native USB port): probing it
+        // resets the board and holds the port away from esptool.
         Assert.Equal(
-            new[] { "/dev/cu.usbmodem14201", "/dev/cu.usbserial-A50285BI" },
+            new[] { "/dev/cu.usbserial-A50285BI" },
             PortDiscovery.FilterCandidates(MacPorts, HostOs.MacOs));
     }
 
@@ -65,8 +67,8 @@ public class DeviceConnectorTests
         var connector = Connector(new()
         {
             ["/dev/ttyS0"] = new UnopenablePort(new IOException("phantom port")),
-            ["/dev/ttyACM0"] = new UnopenablePort(new IOException("open failed")),
-            ["/dev/ttyUSB0"] = fake,
+            ["/dev/ttyUSB0"] = new UnopenablePort(new IOException("open failed")),
+            ["/dev/ttyUSB1"] = fake,
         });
 
         var (device, port) = connector.connect();
@@ -86,9 +88,26 @@ public class DeviceConnectorTests
         var fake = new FakeFlashKitDevice(new byte[0x8000]);
         var connector = Connector(new()
         {
-            ["/dev/ttyACM0"] = notFlashKit,
-            ["/dev/ttyUSB0"] = fake,
+            ["/dev/ttyUSB0"] = notFlashKit,
+            ["/dev/ttyUSB1"] = fake,
         });
+
+        var (_, port) = connector.connect();
+
+        Assert.Same(fake, port);
+    }
+
+    [Fact]
+    public void connect_never_opens_cdc_acm_ports_while_scanning()
+    {
+        // An ESP32 cart's native USB port must not be probed: opening it
+        // resets the board and holds the port away from esptool.
+        var fake = new FakeFlashKitDevice(new byte[0x8000]);
+        var connector = Connector(new()
+        {
+            ["/dev/cu.usbmodem1101"] = new UnopenablePort(new InvalidOperationException("must not open")),
+            ["/dev/cu.usbserial-A50285BI"] = fake,
+        }, HostOs.MacOs);
 
         var (_, port) = connector.connect();
 
@@ -114,13 +133,13 @@ public class DeviceConnectorTests
     {
         var connector = Connector(new()
         {
-            ["/dev/ttyACM0"] = new UnopenablePort(
-                new UnauthorizedAccessException("Access to the port '/dev/ttyACM0' is denied.")),
+            ["/dev/ttyUSB0"] = new UnopenablePort(
+                new UnauthorizedAccessException("Access to the port '/dev/ttyUSB0' is denied.")),
         });
 
         var x = Assert.Throws<DeviceNotFoundException>(() => connector.connect());
 
-        Assert.Contains("/dev/ttyACM0", x.Message);
+        Assert.Contains("/dev/ttyUSB0", x.Message);
         Assert.Contains("denied", x.Message);
         Assert.Contains("udev", x.Message);
         Assert.Single(x.PortErrors);
@@ -130,13 +149,13 @@ public class DeviceConnectorTests
     public void connect_reports_when_no_candidate_ports_exist()
     {
         var connector = new DeviceConnector(
-            () => new[] { "/dev/ttyS0" }, // filtered out on Linux
+            () => new[] { "/dev/ttyS0", "/dev/ttyACM0" }, // filtered out on Linux
             _ => throw new IOException("must not open"),
             HostOs.Linux);
 
         var x = Assert.Throws<DeviceNotFoundException>(() => connector.connect());
 
         Assert.Contains("no candidate serial ports", x.Message);
-        Assert.Contains("/dev/ttyACM*", x.Message);
+        Assert.Contains("/dev/ttyUSB*", x.Message);
     }
 }

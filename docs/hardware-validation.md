@@ -24,9 +24,9 @@ Setup:
 2. `tar xzf flashkit-md-v0.9.0-osx-<arch>.tar.gz` (tar preserves the
    executable bit). If Gatekeeper blocks it:
    `xattr -d com.apple.quarantine ./flashkit-md`
-3. Plug in the programmer. It appears as `/dev/cu.usbmodem*` or
-   `/dev/cu.usbserial*`; no group membership or drivers are needed on
-   macOS. Auto-detection scans those patterns; `--port <path>` pins one.
+3. Plug in the programmer. It appears as `/dev/cu.usbserial-*`
+   (FTDI); no group membership or drivers are needed on macOS.
+   Auto-detection scans that pattern; `--port <path>` pins one.
 
 Validation steps (use the REAL game carts, not the FlashKit flash cart —
 see the warning below):

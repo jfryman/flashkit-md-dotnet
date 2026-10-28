@@ -85,8 +85,8 @@ public sealed class DeviceConnector
         {
             errors.Add("no candidate serial ports found (" + os switch
             {
-                HostOs.Linux => "expected /dev/ttyACM* or /dev/ttyUSB*; is the programmer plugged in?",
-                HostOs.MacOs => "expected /dev/cu.usbmodem* or /dev/cu.usbserial*; is the programmer plugged in?",
+                HostOs.Linux => "expected /dev/ttyUSB*; is the programmer plugged in?",
+                HostOs.MacOs => "expected /dev/cu.usbserial*; is the programmer plugged in?",
                 _ => "is the programmer plugged in?",
             } + ")");
         }
