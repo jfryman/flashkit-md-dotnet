@@ -44,3 +44,6 @@ flowchart TD
   ([core/port-discovery.md](core/port-discovery.md)).
 - Upstream test helpers can pin a test framework major version (Avalonia.Headless.XUnit -> xunit v3 3.x);
   check them before accepting a test-framework major bump ([plans/backlog.md](plans/backlog.md)).
+- "Not detected" with the programmer plugged in: first run `lsof /dev/cu.usbserial-*`. GUI/TUI
+  instances hold the port for their whole lifetime, so a stale second instance (e.g. an old
+  `artifacts/` build next to a downloaded `.app`) silently starves the new one.
