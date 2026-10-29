@@ -15,7 +15,7 @@
     <PackageVersion Include="Avalonia.Themes.Fluent" Version="12.1.4" />
     <PackageVersion Include="System.IO.Hashing" Version="10.0.14" />
     <PackageVersion Include="System.IO.Ports" Version="10.0.14" />
-    <PackageVersion Include="Terminal.Gui" Version="2.4.17" />
+    <PackageVersion Include="Terminal.Gui" Version="2.5.0" />
 
     <PackageVersion Include="coverlet.collector" Version="10.1.0" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
