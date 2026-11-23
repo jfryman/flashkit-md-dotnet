@@ -28,7 +28,7 @@ rules agents must follow.
 ./eng/publish.sh   # self-contained single-file binaries into artifacts/<rid>/
 ```
 
-The .NET 10 SDK lives at `~/.dotnet` and is NOT on the default PATH.
+The .NET SDK (11.x, pinned in global.json; apps target net10.0) lives at `~/.dotnet` and is NOT on the default PATH.
 Both scripts source `eng/ensure-dotnet.sh`, which puts it on PATH and
 auto-installs the global.json-pinned SDK there if missing; for ad-hoc
 commands use `export PATH="$HOME/.dotnet:$PATH"`.
