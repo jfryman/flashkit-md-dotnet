@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.12.1 (November 23, 2026)
+
+IMPROVEMENTS:
+
+ * release: builds use .NET SDK 11.0.100 (the apps still target the .NET
+   10 LTS runtime), System.IO.Hashing 11.0.0, Avalonia 12.1.6 and
+   Terminal.Gui 2.5.0.
+
 ## 1.12.0 (October 28, 2026)
 
 FEATURES:
