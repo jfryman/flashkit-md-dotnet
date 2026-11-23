@@ -7,7 +7,7 @@ from — keep the three in sync when things change.
 
 ## Building and testing
 
-Requires the .NET 10 SDK — but you don't need to install it yourself:
+Requires the .NET 11 SDK (the apps target `net10.0`, the LTS runtime) — but you don't need to install it yourself:
 both scripts source `eng/ensure-dotnet.sh`, which installs the SDK pinned in
 `global.json` into `~/.dotnet` (via Microsoft's `dotnet-install.sh`) when
 no install on the machine satisfies it.
